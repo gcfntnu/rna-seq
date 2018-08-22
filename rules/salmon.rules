@@ -1,0 +1,163 @@
+#-*- mode: snakemake -*-
+"""Snakemake rules for alignment free transcript and gene expression modelling using salmon.
+
+
+Dependencies
+------------
+SALMON, https://combine-lab.github.io/salmon/
+
+Install:
+conda install salmon
+
+"""
+
+import os
+from os.path import join
+
+
+## config params
+
+read_orientation = config.get('read_orientation')
+if read_orientation is None:
+    LIB_TYPE = 'A'
+else:
+    read_orientation = read_orientation.lower()
+    stranded = 'U' if read_orientation == 'u' else 'S'
+    orientation = 'R' if read_orientation == 'rf' else 'F' if read_orientation == 'fr' else ''
+    LIB_TYPE = 'I' + stranded + orientation
+  
+def multi_fastq_input_string_r1(wildcards):
+    """Build input args for multi fastq input
+    """
+    trimmed_files = get_processed_fastq(wildcards)
+    R1 = trimmed_files[::2]
+    return ' '.join(R1)
+
+def multi_fastq_input_string_r2(wildcards):
+    """Build input args for multi fastq input
+    """
+    trimmed_files = get_processed_fastq(wildcards)
+    R2 = trimmed_files[1::2]
+    return ' '.join(R2)
+
+def get_fragment_length(wildcards):
+    val = config['samples'][wildcards.sample].get('Fragment_Length', 180)
+    if val == 'NA':
+        val = 180
+    return val
+    
+def get_fragment_sd(wildcards):
+    val = config['samples'][wildcards.sample].get('Fragment_SD', 20)
+    if val == 'NA':
+        val = 20
+    return val
+    
+def sample_args(wildcards):
+    """Sample specific args.
+    """
+    args = ''
+    sample = config['samples'][wildcards.sample]
+    PE = sample.get('paired_end')
+    if PE is None:
+        PE = sample.get('R2') is not None
+    else:
+        PE = bool(PE)
+    if PE:
+        args += ' -1 {} -2 {} '.format(multi_fastq_input_string_r1(wildcards), multi_fastq_input_string_r2(wildcards))
+        args += '--gcBias '
+    else:
+        args += ' -r {} '.format(multi_fastq_input_string_r1(wildcards))
+        args += '--fldMean {} '.format(get_fragment_length(wildcards))
+        args += '--fldSD {} '.format(get_fragment_sd(wildcards))
+    return args
+
+def get_reference(wildcards):
+    if config.get('rna_content', 'total') == 'total':
+        ref = genome('indices/salmon/full/refInfo.json')
+    else:
+        ref = genome('indices/salmon/vanilla/refInfo.json')
+    return ref
+
+def get_gtf(wildcards):
+    if config.get('rna_content') == 'total':
+        gtf = genome('ext_genes.gtf')
+    else:
+        gtf = genome('genes.gtf')
+    return gtf
+
+
+rule quasi_align:
+    input:
+        get_processed_fastq,
+        index = genome('indices/salmon/refInfo.json'),
+        gtf = genome('genes.gtf')
+    params:
+        output = join(config['tmp_dir'], 'salmon_quasi', '{sample}'),
+        nboot = 30,
+        lib_type = LIB_TYPE,
+        index = os.path.dirname(genome('indices/salmon/refInfo.json')),
+        sample_args = sample_args
+    threads:
+        24
+    conda:
+        'envs/quant.yaml'
+    output:
+        quant = join(config['tmp_dir'], 'salmon_quasi', '{sample}', 'quant.sf'),
+        log = join(config['tmp_dir'], 'salmon_quasi', '{sample}', 'aux', 'meta_info.json')
+    benchmark:
+        'timings/{sample}.salmon'
+    log:
+        'logs/{sample}/meta_info.json'
+    shell:
+        'salmon quant '
+        '-i {params.index} '
+        '-l {params.lib_type} '
+        '-g {input.gtf} '
+        '-p {threads} '
+        '--numBootstraps {params.nboot} '
+        '--writeUnmappedNames '
+        '--seqBias '
+        '-o {params.output} '
+        '{params.sample_args} '
+        '&& cp {output.log}  {log}'
+
+rule tx2gene:
+    input:
+        genome('transcripts.csv')
+    output:
+        temp('tx2gene.txt')
+    run:
+        import pandas as pd
+        df = pd.read_csv(input[0])
+        df = df[['transcript_id', 'gene_id', 'gene_name', 'gene_biotype']]
+        df.to_csv(output[0], sep='\t', index=False)
+
+rule salmon_quant:
+    input:
+        files = expand(rules.quasi_align.output, sample=SAMPLES),
+        txinfo = 'tx2gene.txt',
+        ginfo = genome('genes.csv')
+    params:
+        output = join('data', 'processed', 'salmon', 'quasi'),
+        script = srcdir('scripts/transcript_quant.R')
+    output:
+        gene_counts = join('data/processed', 'salmon', 'quasi.gene.quant'),
+        gene_tpm = join('data/processed', 'salmon', 'quasi.gene.tpm'),
+        gene_info = join('data/processed', 'salmon', 'quasi.gene_info.tsv'),
+        gene_length = join('data/processed', 'salmon', 'quasi.gene.length'),
+        transcript_counts = join('data/processed', 'salmon', 'quasi.transcript.quant'),
+        transcript_tpm = join('data/processed', 'salmon', 'quasi.transcript.tpm'),
+        transcript_info = join('data/processed', 'salmon', 'quasi.transcript_info.tsv'),
+        transcript_length = join('data/processed', 'salmon', 'quasi.transcript.length')
+    conda:
+        'envs/quant.yaml'
+    shell:
+        'Rscript {params.script} '
+        '--type salmon '
+        '--output-length-scaled-tpm '
+        '--output-genelength '
+        '--output-transcripts '
+        '--txinfo {input.txinfo} '
+        '--ginfo {input.ginfo} '
+        '-o {params.output} '
+        ' {input.files} '
