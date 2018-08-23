@@ -1,0 +1,125 @@
+analysis_dir: /home/flatberg/test_cancercelline/analysis
+fastq_dir: /home/flatberg/test_cancercelline/fastq/samples
+filter_fastq: false
+assembly: false
+transcriptome:
+  index:
+    bowtie2: /home/flatberg/test_cancercelline/genome/indices/bowtie2
+genome:
+  bed: /home/flatberg/test_cancercelline/genome/genes.bed12
+  fasta: /home/flatberg/test_cancercelline/genome/genome.fa
+  gtf: /home/flatberg/test_cancercelline/genome/genes.gtf
+  gtf_ext: /home/flatberg/test_cancercelline/genome/ext_genes.gtf
+  index:
+    kallisto: /home/flatberg/test_cancercelline/genome/indices/kallisto/vanilla
+    kallisto_extended: /home/flatberg/test_cancercelline/genome/indices/kallisto/full
+    salmon: /home/flatberg/test_cancercelline/genome/indices/salmon/vanilla
+    salmon_extended: /home/flatberg/test_cancercelline/genome/indices/salmon/full
+    star: /home/flatberg/test_cancercelline/genome/indices/star/genome_r{}
+    bowtie2: /home/flatberg/test_cancercelline/genome/indices/bowtie2
+  ref_flat: /home/flatberg/test_cancercelline/genome/genes.refflat.gz
+genome_dir: /home/flatberg/test_cancercelline/genome
+header:
+  Application: NextSeqFASTQOnly
+  Assay: TruSeqHT
+  Chemistry: Amplicon
+  Date: '2016-04-14'
+  Description: ''
+  ExperimentName: GCF-2016-203
+  IEMFileVersion: '4'
+  Workflow: GenerateFASTQ
+lane_splitting: false
+paired_end: true
+read_geometry: 2x75
+read_orientation: rf
+samples:
+  S17:
+    Description: ''
+    I5_Index_ID: D506
+    I7_Index_ID: D708
+    Sample_ID: S17
+    Sample_Name: F08
+    Sample_Plate: GCF-2016-203
+    Sample_Project: ''
+    Sample_Well: F08
+    fastq_files:
+    - - S17_R1.fastq.gz
+    - - S17_R2.fastq.gz
+    index: TAATGCGC
+    index2: TAAGATTA
+  S8:
+    Description: ''
+    I5_Index_ID: D503
+    I7_Index_ID: D708
+    Sample_ID: S8
+    Sample_Name: C08
+    Sample_Plate: GCF-2016-203
+    Sample_Project: ''
+    Sample_Well: C08
+    fastq_files:
+    - - S8_R1.fastq.gz
+    - - S8_R2.fastq.gz
+    index: TAATGCGC
+    index2: AGGATAGG
+  S20:
+    Description: ''
+    I5_Index_ID: D507
+    I7_Index_ID: D708
+    Sample_ID: S20
+    Sample_Name: G08
+    Sample_Plate: GCF-2016-203
+    Sample_Project: ''
+    Sample_Well: G08
+    fastq_files:
+    - - S20_R1.fastq.gz
+    - - S20_R2.fastq.gz
+    index: TAATGCGC
+    index2: ACGTCCTG
+  S11:
+    Description: ''
+    I5_Index_ID: D504
+    I7_Index_ID: D708
+    Sample_ID: S11
+    Sample_Name: D08
+    Sample_Plate: GCF-2016-203
+    Sample_Project: ''
+    Sample_Well: D08
+    fastq_files:
+    - - S11_R1.fastq.gz
+    - - S11_R2.fastq.gz
+    index: TAATGCGC
+    index2: TCAGAGCC
+  S14:
+    Description: ''
+    I5_Index_ID: D505
+    I7_Index_ID: D708
+    Sample_ID: S14
+    Sample_Name: E08
+    Sample_Plate: GCF-2016-203
+    Sample_Project: ''
+    Sample_Well: E08
+    fastq_files:
+    - - S14_R1.fastq.gz
+    - - S14_R2.fastq.gz
+    index: TAATGCGC
+    index2: CTTCGCCT
+  S5:
+    Description: ''
+    I5_Index_ID: D502
+    I7_Index_ID: D708
+    Sample_ID: S5
+    Sample_Name: B08
+    Sample_Plate: GCF-2016-203
+    Sample_Project: ''
+    Sample_Well: B08
+    fastq_files:
+    - - S5_R1.fastq.gz
+    - - S5_R2.fastq.gz
+    index: TAATGCGC
+    index2: GCCTCTAT
+scratch_dir: /tmp/assembly_tmp
+settings:
+  Adapter: AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+  AdapterRead2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+tmp_dir: data
+twopass: true

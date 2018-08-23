@@ -1,0 +1,31 @@
+#-*- mode: snakemake -*-
+"""
+Snakemake rules for aligning rna-seq fastq files to genome.
+
+
+Dependencies
+------------
+STAR, https://github.com/alexdobin/STAR
+
+Install:
+conda -c bionconda install star
+
+"""
+import glob
+import os
+from os.path import join
+from itertools import chain
+
+include:
+    'filter.rules'
+include:
+    'align/star.rules'      
+
+def get_sorted_bam(wildcards):
+    return join(config['tmp_dir'], 'STAR', '{wildcards.sample}.sorted.bam')
+
+def get_namesorted_bam(wildcards):
+    return join(config['tmp_dir'], 'STAR', '{wildcards.sample}.namesorted.bam')
+
+
+

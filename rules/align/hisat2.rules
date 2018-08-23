@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+#-*- mode: snakemake -*-
+
+import os
+from os.path import join
+
+
+TMP_DIR = config['tmp_dir']
+
+rule all:
+    input: join(TMP_DIR, '{}.hisat2.sorted.bam'.format(sample)) for sample in SAMPLES
+
+def hisat2_input(wildcards):
+    fastq_files = get_fastq()
+    paired_end = config['samples']['paired_end']
+    if paired_end:
+        R1 = fastq_files[::2]
+        R2 = fastq_files[1::2]
+    else:
+        R1 = fastq_files
+        
+    input = '-1 ' + ','.join(R1)
+    if paired_end:
+        input += ' -2 ' + ','.join(R2)
+    return input
+    
+rule hisat_map:
+    input:
+        fastq = get_fastq,
+        index = genome('indices/hisat2/vanilla/genome.1.ht2')
+    params:
+        index = join(config['db'], 'indices/hisat2/vanilla')
+        unaligned = join(TMP_DIR, '{sample}.unaligned.fastq.gz')
+    output:
+        sam = temp(join(TMP_DIR, '{sample}.sam')) 
+    threads:
+        14
+    shell:
+        'hisat2 '
+        '-x {params.index} '
+        '{params.hisat2_input} '
+        '-S {output} '
+        '-p {threads} '
+        '--un-conc-gz {params.unaligned}'
+
+rule sam2bam:
+    input:
+        rules.hisat_map.output
+    output:
+        join(TMP_DIR, '{sample}.hisat2.sorted.bam')
+    shell:
+        'samtools -bS - {input} | samtools sort -o {output}'

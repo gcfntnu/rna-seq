@@ -38,4 +38,6 @@ else:
 include:
     'rules/filter.rules'
 include:
-    'rules/salmon.rules'
+    'rules/quant.rules'
+include:
+    'rules/align.rules'

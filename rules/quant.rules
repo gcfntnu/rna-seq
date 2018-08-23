@@ -7,7 +7,7 @@ Dependencies
 SALMON, https://combine-lab.github.io/salmon/
 
 Install:
-conda install salmon
+conda install -c bioconda salmon
 
 """
 
@@ -15,8 +15,10 @@ import os
 from os.path import join
 
 
-## config params
+_SALMON_INTERIM = join(config.get('tmp_dir', 'data/tmp'), 'salmon')
+_SALMON_OUT = join(config.get('processed_dir', 'data/processed'), 'salmon')
 
+## config params
 read_orientation = config.get('read_orientation')
 if read_orientation is None:
     LIB_TYPE = 'A'
@@ -92,7 +94,7 @@ rule quasi_align:
         index = genome('indices/salmon/refInfo.json'),
         gtf = genome('genes.gtf')
     params:
-        output = join(config['tmp_dir'], 'salmon_quasi', '{sample}'),
+        output = join(config['tmp_dir'], 'salmon', '{sample}'),
         nboot = 30,
         lib_type = LIB_TYPE,
         index = os.path.dirname(genome('indices/salmon/refInfo.json')),
@@ -102,8 +104,8 @@ rule quasi_align:
     conda:
         'envs/quant.yaml'
     output:
-        quant = join(config['tmp_dir'], 'salmon_quasi', '{sample}', 'quant.sf'),
-        log = join(config['tmp_dir'], 'salmon_quasi', '{sample}', 'aux', 'meta_info.json')
+        quant = join(_SALMON_INTERIM, '{sample}', 'quant.sf'),
+        log = join(_SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json')
     benchmark:
         'timings/{sample}.salmon'
     log:
@@ -134,21 +136,21 @@ rule tx2gene:
 
 rule salmon_quant:
     input:
-        files = expand(rules.quasi_align.output, sample=SAMPLES),
+        files = expand(rules.quasi_align.output.quant, sample=SAMPLES),
         txinfo = 'tx2gene.txt',
         ginfo = genome('genes.csv')
     params:
-        output = join('data', 'processed', 'salmon', 'quasi'),
+        output = _SALMON_OUT + os.path.sep,
         script = srcdir('scripts/transcript_quant.R')
     output:
-        gene_counts = join('data/processed', 'salmon', 'quasi.gene.quant'),
-        gene_tpm = join('data/processed', 'salmon', 'quasi.gene.tpm'),
-        gene_info = join('data/processed', 'salmon', 'quasi.gene_info.tsv'),
-        gene_length = join('data/processed', 'salmon', 'quasi.gene.length'),
-        transcript_counts = join('data/processed', 'salmon', 'quasi.transcript.quant'),
-        transcript_tpm = join('data/processed', 'salmon', 'quasi.transcript.tpm'),
-        transcript_info = join('data/processed', 'salmon', 'quasi.transcript_info.tsv'),
-        transcript_length = join('data/processed', 'salmon', 'quasi.transcript.length')
+        gene_counts = join(_SALMON_OUT, 'gene.quant'),
+        gene_tpm = join(_SALMON_OUT, 'gene.tpm'),
+        gene_info = join(_SALMON_OUT, 'gene_info.tsv'),
+        gene_length = join(_SALMON_OUT, 'gene.length'),
+        transcript_counts = join(_SALMON_OUT, 'transcript.quant'),
+        transcript_tpm = join(_SALMON_OUT, 'transcript.tpm'),
+        transcript_info = join(_SALMON_OUT, 'transcript_info.tsv'),
+        transcript_length = join(_SALMON_OUT, 'transcript.length')
     conda:
         'envs/quant.yaml'
     shell:
@@ -161,3 +163,10 @@ rule salmon_quant:
         '--ginfo {input.ginfo} '
         '-o {params.output} '
         ' {input.files} '
+
+
+def get_gene_counts(wildcards):
+    return join(_SALMON_OUT, 'gene.quant')
+
+def get_transcript_counts(wildcards):
+    return join(_SALMON_OUT, 'gene.quant')

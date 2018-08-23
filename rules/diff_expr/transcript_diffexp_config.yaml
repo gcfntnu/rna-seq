@@ -1,0 +1,5 @@
+quant: salmon
+condition: Group
+ref_level: Normoxia
+organism: human
+model_dir: models

@@ -1,0 +1,52 @@
+#-*- mode: snakemake -*-
+
+"""
+Dependencies
+------------
+Sambamba, http://lomereiter.github.io/sambamba/
+
+Install:
+bioconda
+
+FIXME:
+Compare picardtools rmdup vs sambamba version vs STAR
+"""
+_STAR_INTERIM = join(config.get('tmp_dir', 'data/tmp'), 'STAR')
+
+rule mark_duplicates:
+    input:
+        bam = rules.star.output.bam,
+        shared_mem = rules.clean_sharedmem_2pass.output
+    output:
+        bam = join(_STAR_INTERIM, '{sample}.sorted.bam')
+    threads:
+        4
+    benchmark:
+        'timings/{sample}.sambamba.markdup.time'
+    shell:
+        'sambamba markdup -t {threads} {input.bam} {output.bam} '
+
+rule index_bam:
+    input:
+        rules.mark_duplicates.output.bam
+    output:
+        bai = join(_STAR_INTERIM, '{sample}.sorted.bam.bai')
+    threads:
+        4
+    benchmark:
+        'timings/{sample}.sambamba.index.time'
+    shell:
+        'sambamba index -t {threads} {input} '
+           
+rule namesort_bam:
+    input:
+       rules.mark_duplicates.output.bam,
+       rules.index_bam.output
+    output:
+        join(_STAR_INTERIM, '{sample}.namesorted.bam')
+    threads:
+        8
+    benchmark:
+        'timings/{sample}.sambamba.namesort.time'
+    shell:
+        'sambamba sort -N -p -m 24G -t {threads} -o {output} {input}'

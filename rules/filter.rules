@@ -35,8 +35,8 @@ rule fastp_se:
     conda:
         'envs/quant.yaml'
     log:
-        json = 'logs/{sample}-fastp.json',
-        html = 'logs/{sample}-fastp.html'
+        json = 'logs/{sample}/fastp.json',
+        html = 'logs/{sample}/fastp.html'
     params:
         '-f 10 '  # only for lexogen
     shell:
@@ -56,8 +56,8 @@ rule fastp_pe:
     params:
         '-f 10 -F 10 ' #lexogen
     log:
-        json = 'logs/{sample}-fastp.json',
-        html = 'logs/{sample}-fastp.html'        
+        json = 'logs/{sample}/fastp.json',
+        html = 'logs/{sample}/fastp.html'        
     shell:
         'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} {params}'
 

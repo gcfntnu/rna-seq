@@ -92,31 +92,31 @@ main <- function(args){
     }else{
         prefix <- args$output
     }
-    gene.quant.fn <- paste0(prefix, "gene.quant")
+    gene.quant.fn <- paste0(prefix, ".gene.quant")
     write.table(txi$counts, file=gene.quant.fn, sep="\t", quote=FALSE)
-    tpm.fn <- paste0(prefix, "gene.tpm")
+    tpm.fn <- paste0(prefix, ".gene.tpm")
     write.table(txi$abundance, file=tpm.fn, sep="\t", quote=FALSE)
 
     if (args$output_transcripts == TRUE){
-        tx.quant.fn <- paste0(prefix, "transcript.quant")
+        tx.quant.fn <- paste0(prefix, ".transcript.quant")
         write.table(txi.tx$counts, file=tx.quant.fn, sep="\t", quote=FALSE)
         cat("Wrote file: ", tx.quant.fn)
-        tpm.fn <- paste0(prefix, "transcript.tpm")
+        tpm.fn <- paste0(prefix, ".transcript.tpm")
         write.table(txi.tx$abundance, file=tpm.fn, sep="\t", quote=FALSE)
         tx.info <- as.data.frame(tx.info)
         rownames(tx.info) <- tx.info[,"transcript_id"]
         tx.info <- tx.info[rownames(txi.tx$counts),]
-        tx.info.fn <- paste0(prefix, "transcript_info.tsv")
+        tx.info.fn <- paste0(prefix, ".transcript_info.tsv")
         write.table(tx.info, file=tx.info.fn, sep="\t", quote=FALSE, row.names=FALSE)
     }
     
     if (args$output_genelength == TRUE){
         ## transcript
-        tpm.fn <- paste0(prefix, "transcript.length")
+        tpm.fn <- paste0(prefix, ".transcript.length")
         write.table(txi.tx$length, file=tpm.fn, sep="\t", quote=FALSE)
         
         ## gene
-        tpm.fn <- paste0(prefix, "gene.length")
+        tpm.fn <- paste0(prefix, ".gene.length")
         write.table(txi$length, file=tpm.fn, sep="\t", quote=FALSE)
 
         
@@ -126,7 +126,7 @@ main <- function(args){
         gene.info <- as.data.frame(fread(args$ginfo, select=c("gene_id", "gene_name", "gene_biotype")))
         rownames(gene.info) <- gene.info[,"gene_id"]
         gene.info <- gene.info[rownames(txi$counts),]
-        gene.info.fn <- paste0(prefix, "gene_info.tsv")
+        gene.info.fn <- paste0(prefix, ".gene_info.tsv")
         write.table(gene.info, file=gene.info.fn, sep="\t", quote=FALSE, row.names=FALSE)
     }
 

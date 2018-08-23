@@ -1,0 +1,66 @@
+#-*- mode: snakemake -*-
+
+"""
+Picard tools, https://broadinstitute.github.io/picard/
+
+"""
+
+#rule clean_sam_:
+    #fixme: see discussion about cufflinks and softclipping in star mailing list, cleansam is not the correct way
+#    input:
+#        bam = '',
+#        shared_mem = rules.clean_sharedmem_2pass.output
+#    output:
+#        bam = temp(join(config['tmp_dir'], '{sample}.cleaned.bam'))
+#    threads:
+#        1
+#    log:
+#        'logs/{sample}.picard.cleansam.log'
+#    shell:
+#        'picard CleanSam I={input.bam} O={output.bam} 2> {log}'
+
+rule add_RG:
+    input:
+        bam = 'insert.bam.here',
+        shared_mem = rules.clean_sharedmem_2pass.output
+    output:
+        bam = temp(TMPDIR, '{sample}.rg.bam'))
+    log:
+        'logs/{sample}.picard.rg.log'
+    threads:
+        2
+    shell:
+        'picard AddOrReplaceReadGroups '
+	'VALIDATION_STRINGENCY=SILENT '
+	'INPUT={input} '
+	'OUTPUT={output.bam} '
+	'SORT_ORDER=coordinate '
+        'RGLB={wildcards.sample} '
+        'RGPU={wildcards.sample} '
+        'RGPL=ILLUMINA '
+        'RGSM={wildcards.sample} '
+        'RGCN=GCF-NTNU '
+        '2> {log} '
+
+rule _mark_duplicates:
+    input:
+        rules.add_RG.output
+    output:
+        bam = temp(TMPDIR, '{sample}.dedup.picard')),
+        metrics = 'logs/{sample}.rmdup.metrics'
+    log:
+        'logs/{sample}.picard.rmdup.log'
+    params:
+        java_opt="-Xms2g -Xmx32g -XX:MaxPermSize=2g"
+    threads:
+        2        
+    shell:
+        'picard MarkDuplicates '
+        'INPUT={input} '
+        'OUTPUT={output.bam} '
+        'METRICS_FILE={output.metrics} '
+        'VALIDATION_STRINGENCY=SILENT '
+        'MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 '
+        'REMOVE_DUPLICATES=FALSE '
+        'CREATE_INDEX=FALSE ' 
+        '2> {log} '
