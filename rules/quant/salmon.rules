@@ -163,10 +163,3 @@ rule salmon_quant:
         '--ginfo {input.ginfo} '
         '-o {params.output} '
         ' {input.files} '
-
-
-def get_gene_counts(wildcards):
-    return join(_SALMON_OUT, 'gene.quant')
-
-def get_transcript_counts(wildcards):
-    return join(_SALMON_OUT, 'gene.quant')
