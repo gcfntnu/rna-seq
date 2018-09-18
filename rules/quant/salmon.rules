@@ -136,11 +136,11 @@ rule tx2gene:
 
 rule salmon_quant:
     input:
-        files = expand(rules.quasi_align.output, sample=SAMPLES),
+        files = expand(rules.quasi_align.output.quant, sample=SAMPLES),
         txinfo = 'tx2gene.txt',
         ginfo = genome('genes.csv')
     params:
-        output = _SALMON_OUT + os.path.sep,
+        output = _SALMON_OUT,
         script = srcdir('scripts/transcript_quant.R')
     output:
         gene_counts = join(_SALMON_OUT, 'gene.quant'),
@@ -161,5 +161,5 @@ rule salmon_quant:
         '--output-transcripts '
         '--txinfo {input.txinfo} '
         '--ginfo {input.ginfo} '
-        '-o {params.output} '
+        '-o {params.output}/ '
         ' {input.files} '
