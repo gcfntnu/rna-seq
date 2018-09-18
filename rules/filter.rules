@@ -24,19 +24,19 @@ if not os.path.exists(TRIMMED_DIR):
 
 FASTQ_DIR = config.get('fastq_dir', 'data/raw/fastq')
 
-
+        
 rule fastp_se:
     input:
-        R1 = join(FASTQ_DIR, '{sample}_R1.fastq.gz')
+        R1 = join(FASTQ_DIR, 'samples', '{fcid}', '{sample}_R1.fastq.gz')
     output:
-        R1 = join(TRIMMED_DIR, 'fastp_se', '{sample}_R1.fastq.gz')
+        R1 = join(TRIMMED_DIR, 'fastp_se', '{fcid}', '{sample}_R1.fastq.gz')
     threads:
         3
     conda:
         'envs/quant.yaml'
     log:
-        json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'
+        json = 'logs/{sample}/{fcid}/fastp.json',
+        html = 'logs/{sample}/{fcid}/fastp.html'
     params:
         '-f 10 '  # only for lexogen
     shell:
@@ -44,11 +44,11 @@ rule fastp_se:
 
 rule fastp_pe:
     input:
-        R1 = join(FASTQ_DIR, '{sample}_R1.fastq.gz'),
-        R2 = join(FASTQ_DIR, '{sample}_R2.fastq.gz')
+        R1 = join(FASTQ_DIR, 'samples', '{fcid}', '{sample}_R1.fastq.gz'),
+        R2 = join(FASTQ_DIR, 'samples', '{fcid}', '{sample}_R2.fastq.gz')
     output:
-        R1 = join(TRIMMED_DIR, 'fastp_pe', '{sample}_R1.fastq.gz'),
-        R2 = join(TRIMMED_DIR, 'fastp_pe', '{sample}_R2.fastq.gz')
+        R1 = join(TRIMMED_DIR, 'fastp_pe', '{fcid}', '{sample}_R1.fastq.gz'),
+        R2 = join(TRIMMED_DIR, 'fastp_pe', '{fcid}', '{sample}_R2.fastq.gz')
     threads:
         3
     conda:
@@ -56,10 +56,12 @@ rule fastp_pe:
     params:
         '-f 10 -F 10 ' #lexogen
     log:
-        json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'        
+        json = 'logs/{sample}/{fcid}/fastp.json',
+        html = 'logs/{sample}/{fcid}/fastp.html'        
     shell:
         'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} {params}'
+
+
 
         
 def get_processed_fastq(wildcards):
@@ -78,16 +80,20 @@ def get_processed_fastq(wildcards):
             PE = False
         else:
             PE = True
+    
     if PE:
         for r1_fn in sample['R1'].split(','):
-            out_r1_fn = join(TRIMMED_DIR, 'fastp_pe', os.path.basename(r1_fn))
+            FCID = r1_fn.split(os.path.sep)[-2]
+            out_r1_fn = join(TRIMMED_DIR, 'fastp_pe', FCID, os.path.basename(r1_fn))
             R1.append(out_r1_fn)
         for r2_fn in sample['R2'].split(','):
-            out_r2_fn = join(TRIMMED_DIR, 'fastp_pe', os.path.basename(r2_fn))
+            FCID = r2_fn.split(os.path.sep)[-2]
+            out_r2_fn = join(TRIMMED_DIR, 'fastp_pe', FCID, + os.path.basename(r2_fn))
             R2.append(out_r2_fn)
     else:
         for r1_fn in sample['R1'].split(','):
-            out_r1_fn = join(TRIMMED_DIR, 'fastp_se', os.path.basename(r1_fn))
+            FCID = r1_fn.split(os.path.sep)[-2]
+            out_r1_fn = join(TRIMMED_DIR, 'fastp_se', FCID,  os.path.basename(r1_fn))
             R1.append(out_r1_fn)
             R2.append('')
     out = list(i for i in itertools.chain(*zip(R1, R2)) if i)

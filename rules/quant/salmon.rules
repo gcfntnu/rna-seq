@@ -136,7 +136,7 @@ rule tx2gene:
 
 rule salmon_quant:
     input:
-        files = expand(rules.quasi_align.output, sample=SAMPLES),
+        files = expand(rules.quasi_align.output.quant, sample=SAMPLES),
         txinfo = 'tx2gene.txt',
         ginfo = genome('genes.csv')
     params:
