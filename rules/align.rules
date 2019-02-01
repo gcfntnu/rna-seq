@@ -11,21 +11,22 @@ Install:
 conda -c bionconda install star
 
 """
-import glob
-import os
-from os.path import join
-from itertools import chain
 
-include:
-    'filter.rules'
-include:
-    'align/star.rules'      
+ALIGN_INTERIM = join(INTERIM_DIR, 'rnaseq', 'align')
+ALIGN_PROCESSED = join(PROCESSED_DIR, 'rnaseq', 'align')
+
+extra_conf_fn = srcdir('align.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)      
 
 def get_sorted_bam(wildcards):
-    return join(config['tmp_dir'], 'STAR', '{wildcards.sample}.sorted.bam')
+    return join(ALIGN_INTERIM, 'STAR', '{wildcards.sample}.sorted.bam')
 
 def get_namesorted_bam(wildcards):
-    return join(config['tmp_dir'], 'STAR', '{wildcards.sample}.namesorted.bam')
+    return join(ALIGN_INTERIM, 'STAR', '{wildcards.sample}.namesorted.bam')
 
 
-
+include:
+    'align/_star.rules'  

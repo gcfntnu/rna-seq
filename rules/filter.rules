@@ -60,9 +60,6 @@ rule fastp_pe:
         html = 'logs/{sample}/{fcid}/fastp.html'        
     shell:
         'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} {params}'
-
-
-
         
 def get_processed_fastq(wildcards):
     """Return filename of trimmed/filtered fastq file
