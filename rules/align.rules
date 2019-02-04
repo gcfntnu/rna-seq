@@ -22,10 +22,10 @@ if os.path.exists(extra_conf_fn):
         update_config2(config, c)      
 
 def get_sorted_bam(wildcards):
-    return join(ALIGN_INTERIM, 'STAR', '{wildcards.sample}.sorted.bam')
+    return join(ALIGN_INTERIM, 'star', '{wildcards.sample}.sorted.bam')
 
 def get_namesorted_bam(wildcards):
-    return join(ALIGN_INTERIM, 'STAR', '{wildcards.sample}.namesorted.bam')
+    return join(ALIGN_INTERIM, 'star', '{wildcards.sample}.namesorted.bam')
 
 
 include:

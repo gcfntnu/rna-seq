@@ -1,0 +1,277 @@
+#-*- mode:snakemake -*-
+"""ENSEMBL genome for human, mouse, rat
+"""
+
+from os.path import join
+import string
+
+# config
+extra_conf_fn = srcdir('ensembl.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)
+
+ORG = config.get('organism', 'homo_sapiens')
+DB_CONF = config.get('db', {}).get('ensembl', {})
+ENS_RELEASE = DB_CONF.get('release', '92')
+ENS_VER = DB_CONF.get('version', 'GRCh38')
+if ORG == 'homo_sapiens':
+    ENS_NAME = '' if ENS_VER == 'GRCh38' else '/grch37'
+else:
+    ENS_NAME = ''
+
+ERCC = DB_CONF.get('add_ercc', False)
+ENSEMBL_EXT = join(EXT_DIR, 'ensembl', ORG, ENS_VER)
+
+# includes
+include:
+    'ercc.db'
+
+# ENSEMBL URLS 
+GENOME = DB_CONF['genome'].format(ENS_NAME, ENS_RELEASE, ORG, string.capwords(ORG), ENS_VER)
+GTF = DB_CONF['gtf'].format(ENS_NAME, ENS_RELEASE, ORG, string.capwords(ORG), ENS_VER, ENS_RELEASE)
+ENS_TRANSCRIPTOME = DB_CONF['transcriptome'].format(ENS_NAME, ENS_RELEASE, ORG, string.capwords(ORG), ENS_VER)
+ENS_NONCODING = DB_CONF['ncdna'].format(ENS_NAME, ENS_RELEASE, ORG, string.capwords(ORG), ENS_VER)
+
+rule ensembl_dna:
+    params: 
+        url = 'http://' + GENOME
+    output:
+        join(ENSEMBL_EXT, GENOME.split('/')[-1].split('.gz')[0])
+    threads: 
+        32
+    log:
+        'logs/ensembl.genome.log'
+    shell: 
+        'wget -O - {params.url} -o {log} | gunzip -c > {output}'
+
+rule ensembl_cdna:
+    params: 
+        url = 'http://' + ENS_TRANSCRIPTOME
+    output:
+        join(ENSEMBL_EXT, ENS_TRANSCRIPTOME.split('/')[-1].split('.gz')[0])
+    threads: 
+        32
+    log:
+        'logs/ensembl.cdna.log'
+    shell: 
+        'wget -O - {params.url} -o {log} | gunzip -c > {output}'
+
+rule ensembl_noncoding:
+    params:
+        url = 'http://' + ENS_NONCODING
+    output:
+        join(ENSEMBL_EXT, ENS_NONCODING.split('/')[-1].split('.gz')[0])
+    threads:
+        32
+    log:
+        'logs/ensembl.noncoding.log'
+    shell: 
+        'wget -O - {params.url} -o {log} | gunzip -c > {output}'
+
+rule ensembl_gtf:
+    params: 
+        url = 'http://' + GTF
+    output: 
+        join(ENSEMBL_EXT, GTF.split('/')[-1].split('.gz')[0])    
+    threads:
+        32
+    log:
+        'logs/ensembl.gtf.log'
+    shell: 
+        'wget -O - {params.url} -o {log} | gunzip -c > {output}'
+
+rule ensembl_addercc2genome:
+    input:
+        rules.ensembl_dna.output,
+        rules.ercc_files.output.ercc_fasta
+    output:
+        rules.ensembl_dna.output[0].split('.fa')[0] + '.ERCC92.fa'
+    shell:
+        'cat {input} > {output}'
+
+rule ensembl_add_ercc2cdna:
+    input:
+        rules.ensembl_cdna.output,
+        rules.ercc_files.output.ercc_fasta
+    output:
+        rules.ensembl_cdna.output[0].split('.fa')[0] + '.ERCC92.fa'
+    shell:
+        'cat {input} > {output}'
+
+rule ensembl_add_ercc2noncoding:
+    input:
+        rules.ensembl_noncoding.output,
+        rules.ercc_files.output.ercc_fasta
+    output:
+        rules.ensembl_noncoding.output[0].split('.fa')[0] + '.ERCC92.fa'
+    shell:
+        'cat {input} > {output}'
+
+rule ensembl_add_ercc2gtf:
+    input:
+        rules.ensembl_gtf.output,
+        rules.ercc_gtf.output
+    output:
+        rules.ensembl_gtf.output[0].split('.gtf')[0] + '.ERCC92.gtf'
+    shell:
+        'cat {input} > {output}'
+
+rule ensembl_db_downloads:
+    input:
+        genome = rules.ensembl_add_ercc2genome.output if ERCC else rules.ensembl_dna.output,
+        cdna = rules.ensembl_add_ercc2cdna.output if ERCC else rules.ensembl_cdna.output,
+        noncoding = rules.ensembl_noncoding.output,
+        gtf = rules.ensembl_add_ercc2gtf.output if ERCC else rules.ensembl_gtf.output,
+    output:
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa'),
+        cdna = join(ENSEMBL_EXT, 'fasta', 'transcriptome.fa'),
+        gtf = join(ENSEMBL_EXT, 'genes', 'genes.gtf'),
+        noncoding = join(ENSEMBL_EXT, 'fasta', 'ncdna.fa')
+    shell:
+        """
+        ln -sr {input.genome} {output.genome}
+        ln -sr {input.cdna} {output.cdna}
+        ln -sr {input.gtf} {output.gtf}
+        ln -sr {input.noncoding} {output.noncoding}
+        """
+
+rule ensembl_gtf2gene:
+    input:
+        rules.ensembl_db_downloads.output.gtf
+    params:
+        script = srcdir('scripts/gtf2genes.py')
+    output:
+        join(ENSEMBL_EXT, 'genes', 'genes.csv')
+    shell:
+        'python {params.script} {input} > {output}'
+        
+rule ensembl_gtf2tx:
+    input:
+        rules.ensembl_db_downloads.output.gtf
+    params:
+        script = srcdir('scripts/gtf2tx.py')
+    output:
+        join(ENSEMBL_EXT, 'genes', 'transcripts.csv')
+    shell:
+        'python {params.script} {input} > {output}'    
+
+rule ensembl_tx2gene:
+    input:
+        rules.ensembl_gtf2gene.output
+    output:
+        join(ENSEMBL_EXT, 'genes', 'tx2gene.txt')
+    shell:
+        'cut -f1,10 {input} > {output}'
+        
+rule ensembl_index_genome:
+    input:
+        join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    output:
+        join(ENSEMBL_EXT, 'fasta', 'genome.fai')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        'samtools faidx {input}'
+        
+rule ensembl_sequence_dict:
+    input:
+        join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    output:
+        join(ENSEMBL_EXT, 'fasta', 'genome.dict')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'    
+    shell:
+        'picard CreateSequenceDictionary -Xms2g -Xmx2g R={input} O={output}'
+
+rule ensembl_star_genome_index:
+    input: 
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa'),
+        gtf = join(ENSEMBL_EXT, 'genes', 'genes.gtf')
+    output:
+         join(ENSEMBL_EXT, 'star', 'SA')
+    params:
+        index_dir =  join(ENSEMBL_EXT, 'star'),
+        readlength = '100'
+    threads:
+        24
+    log:
+        join(ENSEMBL_EXT, 'logs', 'STAR.index.log')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1' 
+    shell:
+        'STAR '
+        '--runThreadN {threads} '
+        '--runMode genomeGenerate '
+        '--genomeDir {params.index_dir} '
+        '--genomeFastaFiles {input.genome} '
+        '--sjdbGTFfile {input.gtf} '
+        '--sjdbOverhang {params.readlength} '
+        '&& mv Log.out {log}'
+        
+rule ensembl_hisat2_genome_index:
+    input:
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    params:
+        index_dir =  join(ENSEMBL_EXT, 'hisat2')
+    output:
+         join(ENSEMBL_EXT, 'hisat2', 'genome.1.ht2')
+    threads:
+        24
+    log:
+        join(ENSEMBL_EXT, 'logs', 'HISAT2.index.log')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1' 
+    shell:
+        'hisat2-build '
+        '-f '
+        '-p {threads} '
+        '{input.genome} '
+        '{params.index_dir}'
+
+rule ensembl_bowtie2_genome_index:
+    input:
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    params:
+        index_dir =  join(ENSEMBL_EXT, 'bowtie2')
+    output:
+         join(ENSEMBL_EXT, 'bowtie2', 'genome.1.bt2')
+    threads:
+        24
+    log:
+        join(ENSEMBL_EXT, 'logs', 'BOWTIE2.index.log')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'   
+    shell:
+        'bowtie2-build --threads {threads} {input.genome} {params.index_dir}'
+
+rule ensembl_bowtie_genome_index:
+    input:
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    params:
+        index_dir =  join(ENSEMBL_EXT, 'bowtie')
+    output:
+         join(ENSEMBL_EXT, 'bowtie', 'genome.1.ebwt')
+    threads:
+        24
+    log:
+        join(ENSEMBL_EXT, 'logs', 'BOWTIE.index.log')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        'bowtie-build {input.genome} {params.index_dir}'
+        
+rule ensembl_novoalign_genome_index:
+    input:
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    output:
+         join(ENSEMBL_EXT, 'novoalign', 'genome.idx')
+    threads:
+        24
+    log:
+        join(ENSEMBL_EXT, 'logs', 'NOVOALIGN.index.log')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        'novoindex -t {threads} {output} {input.genome}'

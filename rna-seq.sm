@@ -70,12 +70,14 @@ SAMPLES = config.get('samples', [])
 if SAMPLES:
     SAMPLES = list(SAMPLES.keys())
 
-#include:
-#    'rules/db.rules'
-#include:
-#    'rules/filter.rules'
-#include:
-#    'rules/quant.rules'
+include:
+    'rules/db.rules'
+include:
+    'rules/filter.rules'
+include:
+    'rules/align.rules'
+include:
+    'rules/quant.rules'
 
     
 onsuccess:

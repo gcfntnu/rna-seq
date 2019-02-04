@@ -5,93 +5,76 @@ Snakemake rules for filtering rna-seq fastq files before analysis.
 Skewer used for standard filtering, fqtrim used when filter + read collapsing
 """
 import os
-from os.path import join, abspath
-import itertools
-import sys
+from os.path import join, basename
 import yaml
 
 from snakemake.workflow import srcdir
 from snakemake.logging import logger
 
+extra_conf_fn = srcdir('filter.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)
 
-ADAPTER_DEFAULT = 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCA'
-ADAPTER = config.get('adapter', ADAPTER_DEFAULT)
-if ADAPTER == 'NA':
-    ADAPTER = ADAPTER_DEFAULT
-TRIMMED_DIR = config['tmp_dir']
-if not os.path.exists(TRIMMED_DIR):
-    os.makedirs(TRIMMED_DIR)
-
+FILTER_INTERIM = join(INTERIM_DIR, 'rnaseq', 'filter')
 FASTQ_DIR = config.get('fastq_dir', 'data/raw/fastq')
+filter_conf = config['filter']
 
-        
-rule fastp_se:
-    input:
-        R1 = join(FASTQ_DIR, 'samples', '{fcid}', '{sample}_R1.fastq.gz')
-    output:
-        R1 = join(TRIMMED_DIR, 'fastp_se', '{fcid}', '{sample}_R1.fastq.gz')
-    threads:
-        3
-    conda:
-        'envs/quant.yaml'
-    log:
-        json = 'logs/{sample}/{fcid}/fastp.json',
-        html = 'logs/{sample}/{fcid}/fastp.html'
-    params:
-        '-f 10 '  # only for lexogen
-    shell:
-        'fastp -i {input.R1} -o {output.R1} -j {log.json} -h {log.html} {params}'
-
-rule fastp_pe:
-    input:
-        R1 = join(FASTQ_DIR, 'samples', '{fcid}', '{sample}_R1.fastq.gz'),
-        R2 = join(FASTQ_DIR, 'samples', '{fcid}', '{sample}_R2.fastq.gz')
-    output:
-        R1 = join(TRIMMED_DIR, 'fastp_pe', '{fcid}', '{sample}_R1.fastq.gz'),
-        R2 = join(TRIMMED_DIR, 'fastp_pe', '{fcid}', '{sample}_R2.fastq.gz')
-    threads:
-        3
-    conda:
-        'envs/quant.yaml'
-    params:
-        '-f 10 -F 10 ' #lexogen
-    log:
-        json = 'logs/{sample}/{fcid}/fastp.json',
-        html = 'logs/{sample}/{fcid}/fastp.html'        
-    shell:
-        'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} {params}'
-        
-def get_processed_fastq(wildcards):
-    """Return filename of trimmed/filtered fastq file
-    """
-    sample = config['samples'][wildcards.sample]
-    out_files = {}
-    R1 = []
-    R2 = []
-    if 'paired_end' in sample:
-        PE = bool(sample['paired_end'])
+def _filter_get_raw_R1(wildcards):
+    sscol = filter_conf.get('merge', {}).get('sscol', 'Sample_ID')
+    skip = filter_conf.get('merge', {}).get('skip', True)
+    if sscol == 'Sample_ID' or skip:
+        fastq_files = config['samples'][wildcards.sample]['R1'].split(',')
     else:
-        _R1 = sample.get('R1')
-        _R2 = sample.get('R2')
-        if _R2 is None or len(_R2) == 0:
-            PE = False
-        else:
-            PE = True
+        fastq_files = []
+        for sample, values in config['samples'].items():
+            if values[sscol] == wildcards.sample:
+                fastq_files.extend(values['R1'].split(','))
+    return [os.path.join(FASTQ_DIR, i) for i in fastq_files]
+
+def _filter_get_raw_R2(wildcards):
+    sscol = filter_conf.get('merge', {}).get('sscol', 'Sample_ID')
+    skip = filter_conf.get('merge', {}).get('skip', True)
+    if sscol == 'Sample_ID' or skip:
+        fastq_files = config['samples'][wildcards.sample]['R2'].split(',')
+    else:
+        fastq_files = []
+        for sample, values in config['samples'].items():
+            if values[sscol] == wildcards.sample:
+                fastq_files.extend(values['R1'].split(','))
+    return [os.path.join(FASTQ_DIR, i) for i in fastq_files]
+
+
+include:
+    'filter/fastp.rules'
     
-    if PE:
-        for r1_fn in sample['R1'].split(','):
-            FCID = r1_fn.split(os.path.sep)[-2]
-            out_r1_fn = join(TRIMMED_DIR, 'fastp_pe', FCID, os.path.basename(r1_fn))
-            R1.append(out_r1_fn)
-        for r2_fn in sample['R2'].split(','):
-            FCID = r2_fn.split(os.path.sep)[-2]
-            out_r2_fn = join(TRIMMED_DIR, 'fastp_pe', FCID, + os.path.basename(r2_fn))
-            R2.append(out_r2_fn)
+def get_processed_fastq_R1(wildcards):
+    fastq_files = _filter_get_raw_R1(wildcards)
+    merge = config['filter']['merge']['skip'] == False
+    if config['filter']['skip']:
+        if merge:
+            raise NotImplementedError
+        return fastq_files
+    if merge:
+        PTH = join(FILTER_INTERIM, 'concat')
     else:
-        for r1_fn in sample['R1'].split(','):
-            FCID = r1_fn.split(os.path.sep)[-2]
-            out_r1_fn = join(TRIMMED_DIR, 'fastp_se', FCID,  os.path.basename(r1_fn))
-            R1.append(out_r1_fn)
-            R2.append('')
-    out = list(i for i in itertools.chain(*zip(R1, R2)) if i)
-    return out
+        PTH = join(INTERIM_DIR, 'rnaseq', 'filter')
+    if config['samples'][wildcards.sample]['paired_end']:
+        R1 = [join(PTH, 'fastp_pe', basename(fn)) for fn in fastq_files]
+    else:
+        R1 = [join(PTH, 'fastp_se', basename(fn)) for fn in fastq_files]
+    return R1
+
+def get_processed_fastq_R2(wildcards):
+    fastq_files = _filter_get_raw_R2(wildcards)
+    merge = config['filter']['merge']['skip'] == False
+    if config['filter']['skip']:
+        if merge:
+            raise NotImplementedError
+        return fastq_files
+    if merge:
+        PTH = join(FILTER_INTERIM, 'concat')
+    else:
+        PTH = join(INTERIM_DIR, 'rnaseq', 'filter')
+    return [join(PTH, 'fastp_pe', basename(fn)) for fn in fastq_files]

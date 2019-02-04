@@ -4,7 +4,7 @@
 Snakemake rules for aligning rna-seq fastq files to genome using the
 STAR aligner.
 
-This is a two-pass alignment with known reference and gene model. The
+This is a single pass alignment with known reference and gene model. The
 output is coordinate sorted bam files with marked duplicates and the
 companion index (.bai) file.
 
@@ -12,38 +12,24 @@ companion index (.bai) file.
 Dependencies
 ------------
 STAR, https://github.com/alexdobin/STAR
-
-Install:
-bioconda
+SAMBAMBA,
 
 """
 
 import os
 from os.path import join
 
-_STAR_INTERIM = join(config.get('tmp_dir', 'data/tmp'), 'STAR')
+extra_conf_fn = srcdir('star.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)
 
-def index_read_length(*args, **kw):
-    """Return the closest STAR index build path
-    """
-    read_geometry = config.get('read_geometry', '1x75')
-    num, read_length = read_geometry.split('x')
-    num = int(num)
-    if '|' in read_length:
-        read_length = sum([int(i) for i in read_length.split('|')])
-    else:
-        read_length = int(read_length)
-    read_length = num * read_length
-    builds = [50, 75, 85, 150]
-    match, k = None, 1000
-    for b in builds:
-        diff = abs(b - read_length)
-        if diff < k:
-            k = diff
-            match = b
-    match = match or 150
-    return match - 1
-        
+STAR_INTERIM = join(ALIGN_INTERIM, 'star')
+STAR_PROCESSED = join(ALIGN_PROCESSED, 'star')
+REF = config['align']['reference']
+
+
 def star_input_params(wildcards):
     """Multiple fastq files per sample workaround.
 
@@ -52,241 +38,44 @@ def star_input_params(wildcards):
     A work around in snakemake is to build the comma separated input string as a params.fastq
     
     """
-    fastq_files = get_processed_fastq(wildcards)
+    R1 = get_processed_fastq_R1(wildcards)
     if config['samples'][wildcards.sample]['paired_end']: 
-        R1 = fastq_files[::2]
-        R2 = fastq_files[1::2]
-        assert(len(R1) == len(R2))
+        R2 = get_processed_fastq_R2(wildcards)
     else:
-        R1 = fastq_files
         R2 = []
     R1 = ','.join(sorted(set(R1)))
     R2 = ','.join(sorted(set(R2)))
     input_string = ' '.join([R1, R2])
     return input_string
 
-_index = 'indices/star/genome_r{:d}/SA'.format(index_read_length())
-
 rule star_firstpass:
     input:
-        genome = genome(_index),
-        fastq = get_processed_fastq
+        genome = join(ENSEMBL_EXT, 'star', 'SA'),
+        R1 = get_processed_fastq_R1
     params:
-        prefix = lambda wildcards, output: output[0].split('firstpass.SJ.out.tab')[0],
-        read_length = index_read_length(),
+        prefix = join(STAR_INTERIM, '{sample}.'),
         fastq = star_input_params,
-        genome_dir = os.path.dirname(genome(_index))
+        genome_dir = join(ENSEMBL_EXT, 'star')
     output:
-        sj = temp(join(TMPDIR, '{sample}.firstpass.SJ.out.tab'))
+        bam = join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam')
     threads:
         48
     log:
         'logs/{sample}.1pass.Log.final.out'
-    benchmark:
-        'timings/{sample}.star.1pass.time'
     conda:
         'envs/align.yaml'
     shell: 
         'STAR '
         '--runThreadN {threads} '
         '--genomeDir {params.genome_dir} '
-        '--genomeLoad LoadAndKeep ' 
+        '--twopassMode Basic ' 
         '--readFilesCommand zcat '
-        '--outSAMtype None '
-        '--sjdbOverhang {params.read_length} '
+        '--limitBAMsortRAM 25000000000 '
+        '--outFilterType BySJout '
+        '--outMultimapperOrder Random '
+        '--outReadsUnmapped Fastx '
+        '--outSAMtype BAM SortedByCoordinate '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {params.fastq} '
         '&& mv {params.prefix}Log.final.out {log} '
-        
-rule clean_sharedmem_1pass:
-    params:
-        rules.star_firstpass.params.genome_dir
-    output:
-        touch('.star.mem.1pass.cleaned')
-    conda:
-        'envs/align.yaml'            
-    shell:
-        'STAR '
-        '--genomeDir {params} '
-        '--genomeLoad Remove '
-        '--outFileNamePrefix /tmp/foo '
-        '|| echo "NO SHARED MEM" '
-        
-rule collect_1pass_junctions:
-    input:
-        junctions = expand(join(config['tmp_dir'], '{sample}.firstpass.SJ.out.tab'), sample=SAMPLES)
-    output:
-        temp(join(TMPDIR, 'SJ.out.firstpass.tab'))
-    shell:
-        """
-        awk -f scripts/sjCollapseSamples.awk {input.junctions} | sort -k1,1V -k2,2n -k3,3n > {output}
-        """
 
-rule filter_1pass_junctions:
-    input:
-        sj = rules.collect_1pass_junctions.output,
-        mem = rules.clean_sharedmem_1pass.output
-    output:
-        temp(join(TMPDIR, 'SJ.all.filtered.tab'))
-    run:
-        import pandas as pd
-        names = ['seqname', 'start', 'end', 'strand', 'intron_motif', 'known', 'unique_mappers', 'multi_mappers', 'max_overhang', 'samples_detected']
-        df = pd.read_csv(input.sj[0], sep="\t", names=names)
-        keep = df.apply(lambda x: x['unique_mappers']>3 and x['max_overhang'] > 10 and x['samples_detected']>5, axis=1)
-        dff = df.loc[keep,:]
-        dff.to_csv(output[0], sep='\t', header=False, index=False)
-    
-rule new_genome_index:
-    input: 
-        genome = genome('genome.fa'),
-        gtf = genome('genes.gtf'),
-        junctions = rules.filter_1pass_junctions.output,
-        clean_mem = rules.clean_sharedmem_1pass.output
-    output:
-        join(TMPDIR, '_STARgenome', 'SA')
-    params: 
-        genome_dir = join(TMPDIR, '_STARgenome'),
-        read_length = rules.star_firstpass.params.read_length
-    threads:
-        16
-    benchmark:
-        'timings/build.2pass.genome.time'
-    conda:
-        'envs/align.yaml'        
-    shell:
-        'STAR '
-        '--runThreadN {threads} '
-        '--runMode genomeGenerate '
-        '--genomeDir {params.genome_dir} '
-        '--genomeFastaFiles {input.genome} '
-        '--sjdbGTFfile {input.gtf} '
-        '--sjdbFileChrStartEnd {input.junctions} '
-        '--sjdbOverhang {params.read_length} '
-
-
-if config.get('twopass', False):
-    rule star:
-        input:
-            genome = rules.new_genome_index.output,
-            fastq = get_processed_fastq
-        params:
-            fastq = star_input_params,
-            sj = rules.star_firstpass.output,
-            sj_all = rules.filter_1pass_junctions.output,
-            prefix = lambda wildcards, output: output[0].split('Aligned.sortedByCoord.out.bam')[0],
-            read_length = index_read_length(),
-            genome_dir = lambda wildcards, input: os.path.dirname(input[0])
-        output:
-            bam = temp(join(TMPDIR, 'STAR', '{sample}.Aligned.sortedByCoord.out.bam'))
-        threads:
-            48
-        log:
-            'logs/{sample}.Log.final.out'
-        conda:
-            'envs/align.yaml'            
-        benchmark:
-            'timings/{sample}.star.2pass.time'
-        shell: 
-            'STAR '
-            '--runThreadN {threads} '
-            '--genomeDir {params.genome_dir} '
-            '--genomeLoad LoadAndKeep '
-            '--readFilesCommand zcat '
-            '--limitBAMsortRAM 20000000000 ' 
-            '--outSAMtype BAM SortedByCoordinate '
-            '--outFilterType BySJout '
-            '--sjdbFileChrStartEnd {params.sj_all} {params.sj} '
-            '--outMultimapperOrder Random '
-            '--outSAMmultNmax 20 '
-            '--outSAMstrandField intronMotif '
-            '--outReadsUnmapped Fastx '
-            '--sjdbOverhang {params.read_length} '
-            '--outFileNamePrefix {params.prefix} '
-            '--readFilesIn {params.fastq} '
-            '&& mv {params.prefix}Log.final.out {log} '
-else:
-    rule star:
-        input:
-            genome = genome('indices/star/genome_r{:d}/SA'.format(index_read_length())),
-            fastq = get_processed_fastq
-        params:
-            fastq = star_input_params,
-            prefix=lambda wildcards, output: output[0].split('Aligned.sortedByCoord.out.bam')[0],
-            read_length = index_read_length(),
-            genome_dir = lambda wildcards, input : os.path.split(input[0])
-        output:
-            bam = temp(join(TMPDIR, 'STAR', '{sample}.Aligned.sortedByCoord.out.bam'))
-        threads:
-            48
-        log:
-            'logs/{sample}.Log.final.out'
-        benchmark:
-            'timings/{sample}.star.2pass.time'
-        conda:
-            'envs/align.yaml'    
-        shell: 
-            'STAR '
-            '--runThreadN {threads} '
-            '--genomeDir {params.genome_dir} '
-            '--genomeLoad LoadAndKeep '
-            '--readFilesCommand zcat '
-            '--limitBAMsortRAM 20000000000 ' 
-            '--outSAMtype BAM SortedByCoordinate '
-            '--outFilterType BySJout '
-            '--outMultimapperOrder Random '
-            '--outSAMmultNmax 20 '
-            '--outSAMstrandField intronMotif '
-            '--outReadsUnmapped Fastx '
-            '--sjdbOverhang {params.read_length} '
-            '--outFileNamePrefix {params.prefix} '
-            '--readFilesIn {params.fastq} '
-            '&& mv {params.prefix}Log.final.out {log} '
-
-rule star_mark_duplicates:
-    input:
-        bam = rules.star.output.bam
-    output:
-        bam = join(_STAR_INTERIM, '{sample}.sorted.bam')
-    threads:
-        4
-    conda:
-        'envs/align.yaml'            
-    benchmark:
-        'timings/{sample}.sambamba.markdup.time'
-    shell:
-        'sambamba markdup -t {threads} {input.bam} {output.bam} '
-
-rule star_index_bam:
-    input:
-        rules.star_mark_duplicates.output.bam
-    output:
-        bai = join(_STAR_INTERIM, '{sample}.sorted.bam.bai')
-    threads:
-        4
-    conda:
-        'envs/align.yaml'                
-    benchmark:
-        'timings/{sample}.sambamba.index.time'
-    shell:
-        'sambamba index -t {threads} {input} '
-           
-rule star_namesort_bam:
-    input:
-       rules.star_mark_duplicates.output.bam,
-       rules.star_index_bam.output
-    output:
-        join(_STAR_INTERIM, '{sample}.namesorted.bam')
-    threads:
-        8
-    conda:
-        'envs/align.yaml'        
-    benchmark:
-        'timings/{sample}.sambamba.namesort.time'
-    shell:
-        'sambamba sort -N -p -m 24G -t {threads} -o {output} {input}'
-
-            
-rule star_test:
-    input:
-        expand(join(_STAR_INTERIM, '{sample}.sorted.bam.bai'), sample=SAMPLES)
-    
