@@ -81,12 +81,10 @@ rule salmon_transcriptome_index:
     input:
         transcriptome = join(REF_DIR, 'fasta', 'transcriptome.fa')
     params:
-        args = '--perfectHash -k 31 ',
+        args = '--perfectHash -k 31 --keepDuplicates',
         index_dir = join(REF_DIR, 'salmon')
     output:
         join(REF_DIR, 'salmon', 'refInfo.json')
-    singularity:
-        'docker://gcfntnu/ensembl:0.1'
     threads:
         24
     shell:

@@ -5,10 +5,26 @@ import os
 from os.path import join
 
 
-TMP_DIR = config['tmp_dir']
 
-rule all:
-    input: join(TMP_DIR, '{}.hisat2.sorted.bam'.format(sample)) for sample in SAMPLES
+rule ensembl_hisat2_genome_index:
+    input:
+        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+    params:
+        index_dir =  join(ENSEMBL_EXT, 'hisat2')
+    output:
+         join(ENSEMBL_EXT, 'hisat2', 'genome.1.ht2')
+    threads:
+        24
+    log:
+        join(ENSEMBL_EXT, 'logs', 'HISAT2.index.log')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1' 
+    shell:
+        'hisat2-build '
+        '-f '
+        '-p {threads} '
+        '{input.genome} '
+        '{params.index_dir}'
 
 def hisat2_input(wildcards):
     fastq_files = get_fastq()
