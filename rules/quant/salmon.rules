@@ -22,6 +22,8 @@ if os.path.exists(extra_conf_fn):
 SALMON_INTERIM = join(QUANT_INTERIM, 'salmon')
 SALMON_OUT = join(QUANT_PROCESSED, 'salmon')
 
+if not 'REF_DIR' in locals():
+   raise ValueError
 
 ## config params
 read_orientation = config.get('read_orientation')
