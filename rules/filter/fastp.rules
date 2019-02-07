@@ -61,11 +61,11 @@ rule fastp_se:
 
 rule fastp_pe:
     input:
-        R1 = join(FASTQ_DIR, '{sample}_R1.fastq.gz'),
-        R2 = join(FASTQ_DIR, '{sample}_R2.fastq.gz')
+        R1 = join(FASTQ_DIR, '{sample}_R1_001.fastq.gz'),
+        R2 = join(FASTQ_DIR, '{sample}_R2_001.fastq.gz')
     output:
-        R1 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R1.fastq.gz'),
-        R2 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R2.fastq.gz')
+        R1 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R1_001.fastq.gz'),
+        R2 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R2_001.fastq.gz')
     threads:
         3
     singularity:

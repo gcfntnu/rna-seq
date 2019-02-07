@@ -22,11 +22,14 @@ else:
     ENS_NAME = ''
 
 ERCC = DB_CONF.get('add_ercc', False)
-ENSEMBL_EXT = join(EXT_DIR, 'ensembl', ORG, ENS_VER)
+REF_DIR = join(EXT_DIR, 'ensembl', ORG, ENS_VER)
 
 # includes
 include:
     'ercc.db'
+
+include:
+    'converters.rules'
 
 # ENSEMBL URLS 
 GENOME = DB_CONF['genome'].format(ENS_NAME, ENS_RELEASE, ORG, string.capwords(ORG), ENS_VER)
@@ -38,7 +41,7 @@ rule ensembl_dna:
     params: 
         url = 'http://' + GENOME
     output:
-        join(ENSEMBL_EXT, GENOME.split('/')[-1].split('.gz')[0])
+        join(REF_DIR, GENOME.split('/')[-1].split('.gz')[0])
     threads: 
         32
     log:
@@ -50,7 +53,7 @@ rule ensembl_cdna:
     params: 
         url = 'http://' + ENS_TRANSCRIPTOME
     output:
-        join(ENSEMBL_EXT, ENS_TRANSCRIPTOME.split('/')[-1].split('.gz')[0])
+        join(REF_DIR, ENS_TRANSCRIPTOME.split('/')[-1].split('.gz')[0])
     threads: 
         32
     log:
@@ -62,7 +65,7 @@ rule ensembl_noncoding:
     params:
         url = 'http://' + ENS_NONCODING
     output:
-        join(ENSEMBL_EXT, ENS_NONCODING.split('/')[-1].split('.gz')[0])
+        join(REF_DIR, ENS_NONCODING.split('/')[-1].split('.gz')[0])
     threads:
         32
     log:
@@ -74,7 +77,7 @@ rule ensembl_gtf:
     params: 
         url = 'http://' + GTF
     output: 
-        join(ENSEMBL_EXT, GTF.split('/')[-1].split('.gz')[0])    
+        join(REF_DIR, GTF.split('/')[-1].split('.gz')[0])    
     threads:
         32
     log:
@@ -134,7 +137,7 @@ rule ensembl_cdna_gtf:
         gtf = rules.ensembl_add_ercc2gtf.output if ERCC else rules.ensembl_gtf.output,
         dna_index = rules.ensembl_index_genome.output
     output:
-        join(ENSEMBL_EXT, ORG.capitalize() + '.' + ENS_VER + '.cdna.gtf.fa')
+        join(REF_DIR, ORG.capitalize() + '.' + ENS_VER + '.cdna.gtf.fa')
     singularity:
         'docker://gcfntnu/ensembl:0.1'
     shell:
@@ -148,11 +151,11 @@ rule ensembl_db_downloads:
         gtf = rules.ensembl_add_ercc2gtf.output if ERCC else rules.ensembl_gtf.output,
         genome_index = rules.ensembl_index_genome.output
     output:
-        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa'),
-        cdna = join(ENSEMBL_EXT, 'fasta', 'transcriptome.fa'),
-        gtf = join(ENSEMBL_EXT, 'genes', 'genes.gtf'),
-        noncoding = join(ENSEMBL_EXT, 'fasta', 'ncdna.fa'),
-        genome_index = join(ENSEMBL_EXT, 'fasta', 'genome.fa.fai')
+        genome = join(REF_DIR, 'fasta', 'genome.fa'),
+        cdna = join(REF_DIR, 'fasta', 'transcriptome.fa'),
+        gtf = join(REF_DIR, 'genes', 'genes.gtf'),
+        noncoding = join(REF_DIR, 'fasta', 'ncdna.fa'),
+        genome_index = join(REF_DIR, 'fasta', 'genome.fa.fai')
     shell:
         """
         ln -sr {input.genome} {output.genome}
@@ -161,45 +164,3 @@ rule ensembl_db_downloads:
         ln -sr {input.noncoding} {output.noncoding}
         ln -sr {input.genome_index} {output.genome_index}
         """
-
-rule ensembl_gtf2gene:
-    input:
-        rules.ensembl_db_downloads.output.gtf
-    params:
-        script = srcdir('scripts/gtf2genes.py')
-    output:
-        join(ENSEMBL_EXT, 'genes', 'genes.csv')
-    singularity:
-        'docker://gcfntnu/ensembl:0.1'
-    shell:
-        'python {params.script} {input} > {output}'
-        
-rule ensembl_gtf2tx:
-    input:
-        rules.ensembl_db_downloads.output.gtf
-    params:
-        script = srcdir('scripts/gtf2tx.py')
-    output:
-        join(ENSEMBL_EXT, 'genes', 'transcripts.csv')
-    shell:
-        'python {params.script} {input} > {output}'    
-
-rule ensembl_tx2gene:
-    input:
-        rules.ensembl_gtf2gene.output
-    output:
-        join(ENSEMBL_EXT, 'genes', 'tx2gene.txt')
-    singularity:
-        'docker://gcfntnu/ensembl:0.1'
-    shell:
-        'cut -f1,10 {input} > {output}'
-        
-rule ensembl_sequence_dict:
-    input:
-        join(ENSEMBL_EXT, 'fasta', 'genome.fa')
-    output:
-        join(ENSEMBL_EXT, 'fasta', 'genome.dict')
-    singularity:
-        'docker://gcfntnu/ensembl:0.1'    
-    shell:
-        'picard CreateSequenceDictionary -Xms2g -Xmx2g R={input} O={output}'

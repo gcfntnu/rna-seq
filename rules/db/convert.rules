@@ -1,0 +1,80 @@
+#-*- mode:snakemake -*-
+"""Converters between common fileformats
+"""
+
+
+rule convert_gtf2gene_csv:
+    input:
+        join(REF_DIR, 'genes', 'genes.gtf')
+    params:
+        script = srcdir('scripts/gtf2genes.py')
+    output:
+        join(REF_DIR, 'genes', 'genes.csv')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        'python {params.script} {input} > {output}'
+        
+rule convert_gtf2transcript_csv:
+    input:
+        join(REF_DIR, 'genes', 'genes.gtf')
+    params:
+        script = srcdir('scripts/gtf2tx.py')
+    output:
+        join(REF_DIR, 'genes', 'transcripts.csv')
+    shell:
+        'python {params.script} {input} > {output}'    
+
+rule convert_gtf2txg:
+    input:
+        rules.convert_gtf2gene.output
+    output:
+        join(REF_DIR, 'genes', 'tx2gene.txt')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        'cut -f1,10 {input} > {output}'
+        
+rule convert_fasta2sequence_dict:
+    input:
+        join(REF_DIR, 'fasta', 'genome.fa')
+    output:
+        join(REF_DIR, 'fasta', 'genome.dict')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'    
+    shell:
+        'picard CreateSequenceDictionary -Xms2g -Xmx2g R={input} O={output}'
+        
+rule convert_gtf2bed12:
+    input:
+        join(REF_DIR, 'genes', 'genes.gtf')
+    output:
+        join(REF_DIR, 'genes', 'genes.bed12')
+    params:
+        tmpfile = join(TMPDIR, 'gene.genepred')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        """
+        gtfToGenePred -genePredExt -geneNameAsName2 {input} {params}
+        genePredToBed {params} {output}
+        rm {params.tmpfile}        
+        """
+        
+rule convert_gtf2refflat:
+    input:
+        join(REF_DIR, 'genes', 'genes.gtf')
+    output:
+         join(REF_DIR, 'genes', 'genes.refflat.gz')
+    params:
+        tmpfile = join(TMPDIR, 'refflat.tmp')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
+    shell:
+        """
+        gtfToGenePred -genePredExt -geneNameAsName2 {input} {params}
+        paste <(cut -f 12 {params}) <(cut -f 1-10 {params}) > refFlat.txt
+        rm {params.tmpfile}
+        gzip refFlat.txt
+        mv refFlat.txt.gz {output}
+        """

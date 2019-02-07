@@ -27,7 +27,6 @@ if os.path.exists(extra_conf_fn):
 
 STAR_INTERIM = join(ALIGN_INTERIM, 'star')
 STAR_PROCESSED = join(ALIGN_PROCESSED, 'star')
-REF = config['align']['reference']
 
 def star_input_params(wildcards):
     """Multiple fastq files per sample workaround.
@@ -49,17 +48,17 @@ def star_input_params(wildcards):
 
 rule star_genome_index:
     input: 
-        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa'),
-        gtf = join(ENSEMBL_EXT, 'genes', 'genes.gtf')
+        genome = join(REF_DIR, 'fasta', 'genome.fa'),
+        gtf = join(REF_DIR, 'genes', 'genes.gtf')
     output:
-         join(ENSEMBL_EXT, 'star', 'SA')
+         join(REF_DIR, 'star', 'SA')
     params:
-        index_dir =  join(ENSEMBL_EXT, 'star'),
-        readlength = '100'
+        index_dir =  join(REF_DIR, 'star'),
+        readlength = '149'
     threads:
         24
     log:
-        join(ENSEMBL_EXT, 'logs', 'STAR.index.log')
+        join(REF_DIR, 'logs', 'STAR.index.log')
     singularity:
         'docker://gcfntnu/ensembl:0.1' 
     shell:
@@ -74,19 +73,18 @@ rule star_genome_index:
 
 rule star_firstpass:
     input:
-        genome = join(ENSEMBL_EXT, 'star', 'SA'),
+        genome = join(REF_DIR, 'star', 'SA'),
         fastq = get_processed_fastq_R1
     params:
         prefix = lambda wildcards, output: output[0].split('firstpass.SJ.out.tab')[0],
-        read_length = '100',
         fastq = star_input_params,
-        genome_dir = join(ENSEMBL_EXT, 'star')
+        genome_dir = join(REF_DIR, 'star')
     output:
         sj = temp(join(STAR_INTERIM, '{sample}.firstpass.SJ.out.tab'))
     threads:
         48
     log:
-        'logs/{sample}.1pass.Log.final.out'
+        'logs/{sample}/1pass.Log.final.out'
     conda:
         'envs/align.yaml'
     shell: 
@@ -117,7 +115,7 @@ rule star_clean_memory_1pass:
 if config['align']['star']['twopass']:
     rule star_align:
         input:
-            genome = join(ENSEMBL_EXT, 'star', 'SA'),
+            genome = join(REF_DIR, 'star', 'SA'),
             fastq = get_processed_fastq_R1,
             sj = expand(rules.star_firstpass.output, sample=SAMPLES)
         params:
@@ -125,11 +123,11 @@ if config['align']['star']['twopass']:
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
             genome_dir = lambda wildcards, input: os.path.dirname(input.genome)
         output:
-            bam = temp(join(STAR_INTERIM, 'STAR', '{sample}.Aligned.sortedByCoord.out.bam'))
+            bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
         threads:
-            48
+            16
         log:
-            'logs/{sample}.Log.final.out'
+            'logs/{sample}/Log.final.out'
         conda:
             'envs/align.yaml'
         shell: 
@@ -150,18 +148,18 @@ if config['align']['star']['twopass']:
 else:
     rule star_align:
         input:
-            genome = join(ENSEMBL_EXT, 'star', 'SA'),
+            genome = join(REF_DIR, 'star', 'SA'),
             fastq = get_processed_fastq_R1
         params:
             fastq = star_input_params,
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
             genome_dir = lambda wildcards, input : os.path.dirname(input.genome)
         output:
-            bam = temp(join(STAR_INTERIM, 'STAR', '{sample}.Aligned.sortedByCoord.out.bam'))
+            bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
         threads:
-            48
+            16
         log:
-            'logs/{sample}.Log.final.out'
+            'logs/{sample}/Log.final.out'
         conda:
             'envs/align.yaml'    
         shell: 
@@ -187,9 +185,9 @@ rule star_mark_duplicates:
     output:
         bam = join(STAR_INTERIM, '{sample}.sorted.bam')
     threads:
-        4
+        16
     shell:
-        'sambamba markdup -t {threads} {input.bam} {output.bam} '
+        'sambamba markdup -t 8 {input.bam} {output.bam} '
 
 rule star_index_bam:
     input:
@@ -197,9 +195,9 @@ rule star_index_bam:
     output:
         bai = join(STAR_INTERIM, '{sample}.sorted.bam.bai')
     threads:
-        4
+        16
     shell:
-        'sambamba index -t {threads} {input} '
+        'sambamba index -t 8 {input} '
            
 rule star_namesort_bam:
     input:
@@ -208,6 +206,6 @@ rule star_namesort_bam:
     output:
         join(STAR_INTERIM, '{sample}.namesorted.bam')
     threads:
-        8
+        16
     shell:
-        'sambamba sort -N -p -m 24G -t {threads} -o {output} {input}'
+        'sambamba sort -N -p -m 24G -t 8 -o {output} {input}'

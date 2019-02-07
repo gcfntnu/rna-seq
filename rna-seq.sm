@@ -56,6 +56,7 @@ FASTQ_DIR =  environ.get('GCF-FASTQ') or config.get('fastq_dir','data/raw/fastq'
 makedirs(FASTQ_DIR, exist_ok=True)
 PROCESSED_DIR =  environ.get('GCF-PROCESSED') or config.get('processed_dir', 'data/processed')
 makedirs(PROCESSED_DIR, exist_ok=True)
+REF_DIR = environ.get('GCF-REF') or config.get('ref_dir')
 
 extra_conf_fn = srcdir('rna-seq.config')
 if os.path.exists(extra_conf_fn):

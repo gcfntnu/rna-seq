@@ -21,14 +21,14 @@ GC_ORG_MAP = {'homo_sapiens':  'human',
               'rattus_norwegicus': 'rat'}
 
 ORG = config.get('organism', 'homo_sapiens')
-GENCODE_ORG = GC_ORG_MAP[ORG]
+GENCODE_ORG = GC_ORG_MAP.get(ORG, '')
 DB_CONF = config['db']['gencode']
 GENCODE_RELEASE = DB_CONF.get('release', 27)
 GENCODE_VERSION = DB_CONF.get('gencode_version', 'GRCh38')
 TRANSCRIPTOME_TYPE = DB_CONF.get('transcriptome_type', '') #['pc_','all']
 PROTOCOL = DB_CONF.get('protocol', 'http')
 ERCC = DB_CONF.get('add_ercc', False)
-GENCODE_EXT = join(EXT_DIR, '', 'gencode')
+REF_DIR = join(EXT_DIR, '', 'gencode')
 
 # includes
 if ERCC:
@@ -56,7 +56,7 @@ GENCODE_POLYA_GTF = GENCODE_POLYA_GTF.format(GENCODE_ORG, GENCODE_RELEASE, GENCO
 
 rule gencode_dna:
     output:
-        join(GENCODE_EXT, GENOME.split('/')[-1].split('.gz')[0])
+        join(REF_DIR, GENOME.split('/')[-1].split('.gz')[0])
     params: 
         url = GENOME
     threads: 
@@ -70,7 +70,7 @@ rule gencode_cdna:
     params: 
         url = GENCODE_TRANSCRIPTOME
     output:
-        join(GENCODE_EXT, GENCODE_TRANSCRIPTOME.split('/')[-1].split('.gz')[0])
+        join(REF_DIR, GENCODE_TRANSCRIPTOME.split('/')[-1].split('.gz')[0])
     threads: 
         32
     log:
@@ -83,7 +83,7 @@ rule gencode_noncoding:
     params:
         url = GENCODE_LNC
     output:
-        join(GENCODE_EXT, GENCODE_LNC.split('/')[-1].split('.gz')[0])
+        join(REF_DIR, GENCODE_LNC.split('/')[-1].split('.gz')[0])
     threads:
         32
     log:
@@ -95,7 +95,7 @@ rule gencode_gtf:
     params: 
         url = GTF
     output: 
-        join(GENCODE_EXT, GTF.split('/')[-1].split('.gz')[0])    
+        join(REF_DIR, GTF.split('/')[-1].split('.gz')[0])    
     threads:
         32
     log:
@@ -146,10 +146,10 @@ rule gencode_db_downloads:
         noncoding = rules.gencode_noncoding.output,
         gtf = rules.gencode_add_ercc2gtf.output if ERCC else rules.gencode_gtf.output,
     output:
-        genome = join(GENCODE_EXT, 'fasta', 'genome.fa'),
-        cdna = join(GENCODE_EXT, 'fasta', 'cdna.fa'),
-        gtf = join(GENCODE_EXT, 'genes', 'genes.gtf'),
-        noncoding = join(GENCODE_EXT, 'fasta', 'ncdna.fa')
+        genome = join(REF_DIR, 'fasta', 'genome.fa'),
+        cdna = join(REF_DIR, 'fasta', 'cdna.fa'),
+        gtf = join(REF_DIR, 'genes', 'genes.gtf'),
+        noncoding = join(REF_DIR, 'fasta', 'ncdna.fa')
     shell:
         """
         ln -s {input.genome} {output.genome}
@@ -164,7 +164,7 @@ rule gencode_gtf2gene:
     params:
         script = srcdir('scripts/gtf2genes.py')
     output:
-        join(GENCODE_EXT, 'genes', 'genes.csv')
+        join(REF_DIR, 'genes', 'genes.csv')
     shell:
         'python {params.script} {input} > {output}'
         
@@ -174,7 +174,7 @@ rule gencode_gtf2tx:
     params:
         script = srcdir('scripts/gtf2tx.py')
     output:
-        join(GENCODE_EXT, 'genes', 'transcripts.csv')
+        join(REF_DIR, 'genes', 'transcripts.csv')
     shell:
         'python {params.script} {input} > {output}'    
 
@@ -182,7 +182,7 @@ rule gencode_tx2gene:
     input:
         rules.gencode_gtf2gene.output
     output:
-        join(GENCODE_EXT, 'genes', 'tx2gene.txt')
+        join(REF_DIR, 'genes', 'tx2gene.txt')
     shell:
         'cut -f1,10 {input} > {output}'
         

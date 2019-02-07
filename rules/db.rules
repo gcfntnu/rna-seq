@@ -4,7 +4,11 @@ if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
         c  = yaml.load(fh) or {}
         update_config2(config, c)
-include:
-    'db/ensembl.db'
-include:
-    'db/gencode.db'
+
+if not config.get('ref_dir'):
+    if config['db']['reference'] == 'ensembl':
+        include:
+            'db/ensembl.db'
+    if config['db']['reference'] == 'gencode':
+        include:
+            'db/gencode.db'
