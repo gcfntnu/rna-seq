@@ -1,9 +1,10 @@
-rule ensembl_create_ribointervals:
+
+rule qc_bam_create_ribointervals:
     input:
-        gtf = join(ENSEMBL_EXT, 'genes', 'genes.gtf'),
-        bam = join(config['tmp_dir'], '{}.sorted.bam'.format(SAMPLES[0]))
+        gtf = join(REF_DIR, 'genes', 'genes.gtf'),
+        bam = expand(get_sorted_bam, sample=SAMPLES[0])
     output:
-        temp('rrna.intervals')
+        join(REF_DIR, 'genes', 'rrna.intervals')
     shell:
         """
         samtools view -H {input.bam} > /mnt/scratch/dummy
@@ -11,10 +12,10 @@ rule ensembl_create_ribointervals:
         mv /mnt/scratch/dummy {output}
         """
 
-rule picard_rnametrics:
+rule qc_bam_picard_rnametrics:
     input:
         bam = get_sorted_bam,
-        ref_flat = join(ENSEMBL_EXT, 'genes', 'genes.refflat.gz'),
+        ref_flat = join(REF_DIR, 'genes', 'genes.refflat.gz'),
         rrna = rules.create_ribointervals.output
     output:
         metrics = 'logs/{sample}.rnaseq.metrics'
@@ -32,3 +33,4 @@ rule picard_rnametrics:
         'ASSUME_SORTED=FALSE '
         'RIBOSOMAL_INTERVALS={input.rrna} '
         'VALIDATION_STRINGENCY=SILENT '
+
