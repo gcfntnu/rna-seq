@@ -34,3 +34,17 @@ rule qc_bam_picard_rnametrics:
         'RIBOSOMAL_INTERVALS={input.rrna} '
         'VALIDATION_STRINGENCY=SILENT '
 
+rule qc_bam_picard_collect:
+    input:
+        bam = get_sorted_bam
+    params:
+        out = 'logs/{sample}'
+    output:
+        'logs/{sample}/insert_size_metric.tsv'
+    log:
+        'logs/{sample}/insert_size_metric.pdf'
+    shell:
+        'picard CollectInsertSizeMetrics '
+        'INPUT={input.bam}'
+        'H={log}'
+        'OUTPUT={output} '
