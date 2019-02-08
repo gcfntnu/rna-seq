@@ -49,7 +49,6 @@ if (!require(data.table)) {
 }
 
 
-
 read.featurecounts.multisample <- function(filename){
     tab <- fread(filename, skip=1)
     fdata <- as.data.frame(tab[,1:6])
@@ -122,8 +121,8 @@ main <- function(args){
     stopifnot(all(file.exists(args$input)))
     type <- match.arg(args$type, c("featurecounts", "star"))
     length <- NULL
-    if (args$type == "featurecounts"){
-        if (length(args$input) == 1){
+    if (length(args$input) == 1){
+        if (args$type == "featurecounts"){
             out <- read.featurecounts.multisample(args$input)
             counts <- out$counts
             length <- out$length
@@ -135,6 +134,7 @@ main <- function(args){
         
         for (i in seq_along(args$input)){
                 out <- read.gene.count(args$input[i], indices=indices)
+
                 if (i == 1){
                     ids.1 <- out$gene.ids
                     n.genes <- length(ids.1)
@@ -154,8 +154,12 @@ main <- function(args){
                 if (!is.null(length)) length[,i] <- out$length
         }
         ## assume filenames are on the form '{sample-id}.*'
-        basenames <- sapply(args$input, basename)
-        sample.ids <- sapply(strsplit(basenames, "\\."), function(x) x[[1]])
+        ##basenames <- sapply(args$input, basename)
+        ##sample.ids <- sapply(strsplit(basenames, "\\."), function(x) x[[1]])
+
+        ## sample-id is  parent dir
+        sample.ids <- sapply(sapply(args$input, dirname), basename)
+
         colnames(counts) <- sample.ids
         if (!is.null(length)){
             colnames(length) <- sample.ids
@@ -163,12 +167,8 @@ main <- function(args){
     }
 
     
-    if (!file.exists(dirname(args$prefix))){
-        dir.create(dirname(args$prefix), showWarnings=FALSE)
-    }
-    
     gene.quant.fn <- paste0(args$prefix, ".gene.quant")
-    fwrite(counts, file=gene.quant.fn, sep="\t", row.names=TRUE)
+    write.table(counts, file=gene.quant.fn, sep="\t", row.names=TRUE)
     if (args$verbose == TRUE){
         message(cat("wrote", gene.quant.fn))
     }
@@ -192,12 +192,11 @@ main <- function(args){
         }
     }
     if (!is.null(args$gene_info)){
-        gene.info <- as.data.frame(fread(args$gene_info, select=c("gene_id", "gene_name")))
+        gene.info <- as.data.frame(fread(args$gene_info))
         rownames(gene.info) <- gene.info[,"gene_id"]
         gene.info <- gene.info[rownames(counts),]
         gene.info.fn <- paste0(args$prefix, ".gene_info.tsv")
-        library(readr)
-        write_tsv(gene.info, gene.info.fn)
+        write.table(gene.info, file=gene.info.fn, sep="\t")
         if (args$verbose == TRUE){
             message(cat("wrote", gene.info.fn))
         }
@@ -208,8 +207,7 @@ main <- function(args){
             stop("no length calculations available from input. Use --gene-info with a column named `gene_length`")
         }
         length.fn <- paste0(args$prefix, ".gene.length")
-        library(readr)
-        write_tsv(as.data.frame(length), length.fn)
+        write.table(as.data.frame(length), length.fn, sep="\t")
         if (args$verbose == TRUE){
             message(cat("wrote", length.fn))
         }
@@ -222,8 +220,6 @@ if (args$verbose == TRUE){
     options(echo=TRUE)
     #debug(main)
 }
-
-
 
 
 main(args)

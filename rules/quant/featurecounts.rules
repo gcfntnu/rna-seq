@@ -15,56 +15,54 @@ FC_PROCESSED = join(QUANT_PROCESSED, 'featurecounts')
 
 ## config params
 read_orientation = config.get('read_orientation')
-if read_orientation is None:
-    LIB_TYPE = 'rf'
-else:
-    STRAND = '0' if strand == 'unstranded' else '-s 1' if strand == 'fr' else '-s 2'
+STRAND = '0' if read_orientation == 'u' else '-s 1' if read_orientation == 'fr' else '-s 2'
 
 
 rule featurecounts:
     input:
-        bam = get_namesorted_bam
+        bam = get_namesorted_bam,
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
-    output:
-        counts = join(FC_INTERIM, '{sample}', 'counts.txt')
     params:
         strand = STRAND,
         summary = join(FC_INTERIM, '{sample}', 'counts.txt.summary'),
-        paired_end = ''
+        paired_end = '--primary '
     log:
         'logs/{sample}/featurecounts.txt.summary'
     threads:
         16
     singularity:
-        
+        'docker://gcfntnu/featurecounts:0.1'
+    output:
+        counts = join(FC_INTERIM, '{sample}', 'counts.txt')
     shell:
         'featureCounts '
-        '-a {params.gtf} '
+        '-a {input.gtf} '
         '-o {output.counts} '
         '-T {threads} '
         '{params.strand} '
-        '{params.paired_end}'
-        '{input} '
+        '{params.paired_end} '
+        '{input.bam} '
         '&& '
         'mv {params.summary} {log}'
 
 rule featurecounts_quant:
     input:
-        counts = expand(rules.featurecounts.output.counts, sample=SAMPLES)
+        counts = expand(rules.featurecounts.output.counts, sample=SAMPLES),
         gene_info = join(REF_DIR, 'genes', 'genes.csv')
     params:
-        output = join(FC_PROCESSED, 'featurecounts', 'featurecounts'),
-        script_dir = srcdir('scripts/')
+        output = join(FC_PROCESSED, 'featurecounts'),
+        script = srcdir('scripts/gene_quant.R')
+    singularity:
+        'docker://gcfntnu/featurecounts:0.1'
     output:
-        gene_counts = join(FC_PROCESSED, 'featurecounts', 'featurecounts.gene.quant'),
-        tpm = join(FC_PROCESSED, 'featurecounts', 'featurecounts.gene.tpm'),
-        gene_info = join(FC_PROCESSED, 'featurecounts', 'featurecounts.gene_info.tsv')
+        gene_counts = join(FC_PROCESSED, 'featurecounts.gene.quant'),
+        tpm = join(FC_PROCESSED, 'featurecounts.gene.tpm'),
+        gene_info = join(FC_PROCESSED, 'featurecounts.gene_info.tsv')
     shell:
-        'Rscript {params.script_dir}/gene_quant.R '
+        'Rscript {params.script} '
         '{input.counts} '
         '-o {params.output} '
         '-t featurecounts '
-        '--output-genelength '
         '--output-tpm '
         '--gene-info {input.gene_info} '
         '-v'

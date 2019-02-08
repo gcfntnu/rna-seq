@@ -29,7 +29,7 @@ include:
     'ercc.db'
 
 include:
-    'converters.rules'
+    'convert.rules'
 
 # ENSEMBL URLS 
 GENOME = DB_CONF['genome'].format(ENS_NAME, ENS_RELEASE, ORG, string.capwords(ORG), ENS_VER)

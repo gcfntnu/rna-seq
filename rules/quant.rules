@@ -26,6 +26,8 @@ include:
     'filter.rules'
 include:
     'quant/salmon.rules'
+include:
+    'quant/featurecounts.rules'
 
 def get_gene_counts(wildcards):
     return join(_SALMON_OUT, 'gene.quant')

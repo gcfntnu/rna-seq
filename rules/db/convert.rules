@@ -27,7 +27,7 @@ rule convert_gtf2transcript_csv:
 
 rule convert_gtf2txg:
     input:
-        rules.convert_gtf2gene.output
+        rules.convert_gtf2gene_csv.output
     output:
         join(REF_DIR, 'genes', 'tx2gene.txt')
     singularity:

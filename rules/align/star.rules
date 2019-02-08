@@ -54,7 +54,7 @@ rule star_genome_index:
          join(REF_DIR, 'star', 'SA')
     params:
         index_dir =  join(REF_DIR, 'star'),
-        readlength = '149'
+        readlength = '66'
     threads:
         24
     log:
@@ -76,11 +76,11 @@ rule star_firstpass:
         genome = join(REF_DIR, 'star', 'SA'),
         fastq = get_processed_fastq_R1
     params:
-        prefix = lambda wildcards, output: output[0].split('firstpass.SJ.out.tab')[0],
+        prefix = lambda wildcards, output: output[0].split('SJ.out.tab')[0],
         fastq = star_input_params,
         genome_dir = join(REF_DIR, 'star')
     output:
-        sj = temp(join(STAR_INTERIM, '{sample}.firstpass.SJ.out.tab'))
+        sj = join(STAR_INTERIM, '{sample}.firstpass.SJ.out.tab')
     threads:
         48
     log:
@@ -93,6 +93,7 @@ rule star_firstpass:
         '--genomeDir {params.genome_dir} '
         '--genomeLoad LoadAndKeep ' 
         '--readFilesCommand zcat '
+        '--outFilterType BySJout '
         '--outSAMtype None '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {params.fastq} '
@@ -110,14 +111,15 @@ rule star_clean_memory_1pass:
         '--genomeDir {params} '
         '--genomeLoad Remove '
         '--outFileNamePrefix /tmp/foo '
-        '|| echo "NO 1pass SHARED MEMORY" '
+        '|| echo "NO firstpass SHARED MEMORY" '
 
 if config['align']['star']['twopass']:
     rule star_align:
         input:
             genome = join(REF_DIR, 'star', 'SA'),
             fastq = get_processed_fastq_R1,
-            sj = expand(rules.star_firstpass.output, sample=SAMPLES)
+            sj = expand(rules.star_firstpass.output, sample=SAMPLES),
+            mem = rules.star_clean_memory_1pass.output
         params:
             fastq = star_input_params,
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
@@ -125,7 +127,7 @@ if config['align']['star']['twopass']:
         output:
             bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
         threads:
-            16
+            48
         log:
             'logs/{sample}/Log.final.out'
         conda:
@@ -137,7 +139,7 @@ if config['align']['star']['twopass']:
             '--readFilesCommand zcat '
             '--outSAMtype BAM SortedByCoordinate '
             '--outFilterType BySJout '
-            '--sjdbFileChrStartEnd {input.sj '
+            '--sjdbFileChrStartEnd {input.sj} '
             '--outMultimapperOrder Random '
             '--outSAMmultNmax 20 '
             '--outSAMstrandField intronMotif '
