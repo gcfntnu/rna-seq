@@ -57,6 +57,8 @@ rule star_genome_index:
         readlength = '66'
     threads:
         24
+    priority:
+        10
     log:
         join(REF_DIR, 'logs', 'STAR.index.log')
     singularity:
@@ -105,7 +107,9 @@ rule star_clean_memory_1pass:
     output:
         temp(touch('.star.mem.1pass.cleaned'))
     conda:
-        'envs/align.yaml'         
+        'envs/align.yaml'
+    priority:
+        0
     shell:
         'STAR '
         '--genomeDir {params} '
@@ -142,6 +146,7 @@ if config['align']['star']['twopass']:
             '--sjdbFileChrStartEnd {input.sj} '
             '--outMultimapperOrder Random '
             '--outSAMmultNmax 20 '
+            'limitSjdbInsertNsj 2500000 '
             '--outSAMstrandField intronMotif '
             '--outReadsUnmapped Fastx '
             '--outFileNamePrefix {params.prefix} '
