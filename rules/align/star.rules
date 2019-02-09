@@ -146,7 +146,7 @@ if config['align']['star']['twopass']:
             '--sjdbFileChrStartEnd {input.sj} '
             '--outMultimapperOrder Random '
             '--outSAMmultNmax 20 '
-            'limitSjdbInsertNsj 2500000 '
+            '--limitSjdbInsertNsj 2500000 '
             '--outSAMstrandField intronMotif '
             '--outReadsUnmapped Fastx '
             '--outFileNamePrefix {params.prefix} '
