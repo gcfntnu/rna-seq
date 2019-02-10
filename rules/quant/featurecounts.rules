@@ -10,7 +10,7 @@ if os.path.exists(extra_conf_fn):
         c  = yaml.load(fh) or {}
         update_config2(config, c)
 
-FC_INTERIM = join(QUANT_INTERIM, 'featurecounts')
+FC_INTERIM = join(QUANT_INTERIM, config['align']['method'], 'featurecounts')
 FC_PROCESSED = join(QUANT_PROCESSED, 'featurecounts')
 
 ## config params
