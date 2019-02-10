@@ -129,18 +129,22 @@ rule star_collect_1pass_junctions:
 
 rule star_filter_junctions:
     input:
-        sj = join(STAR_INTERIM, 'SJ.out.tab')
+        sj = join(STAR_INTERIM, 'SJ.out.firstpass.tab')
+    params:
+        script = srcdir('scripts/filter_junctions.py'),
+        args = '--min-unique-mappers 50 --max-overhang 20 --samples_detected 10 --verbose '
     output:
         sj = join(STAR_INTERIM, 'SJ.out.filtered.tab')
     shell:
-        'python '
+        'python {params.script} {params.args} {input.sj} > {output}'
 
 if config['align']['star']['twopass']:
+    filter_sj = config['align']['star']['filter_sj']
     rule star_align:
         input:
             genome = join(REF_DIR, 'star', 'SA'),
             fastq = get_processed_fastq_R1,
-            sj = expand(rules.star_firstpass.output, sample=SAMPLES),
+            sj = join(STAR_INTERIM, 'SJ.out.filtered.tab') if filter_sj else expand(rules.star_firstpass.output, sample=SAMPLES),
             mem = rules.star_clean_memory_1pass.output
         params:
             fastq = star_input_params,
