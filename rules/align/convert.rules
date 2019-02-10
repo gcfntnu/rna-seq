@@ -1,0 +1,44 @@
+
+rule bam_bigwig:
+    input:
+        bam = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam'),
+        chrom_size = join(REF_DIR, 'star', 'chrLength.txt'),
+        genome = join(REF_DIR, 'fasta', 'genome.fa')
+    output:
+        bw = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam')
+    shell:
+        """
+        bedtools genomecov -bg -ibam {input} -split -scale 1.0 > test.bedgraph
+        bedGraphToBigWig test.bedgraph {input.chrom_size} {output}
+        rm test.bedgraph
+        """
+        
+rule bam_mark_duplicates:
+    input:
+        bam = join(ALIGN_INTERIM, '{aligner}', '{sample}.Aligned.sortedByCoord.out.bam')
+    output:
+        bam = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam')
+    threads:
+        16
+    shell:
+        'sambamba markdup -t 8 {input.bam} {output.bam} '
+
+rule bam_index:
+    input:
+        rules.bam_mark_duplicates.output.bam
+    output:
+        bai = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam.bai')
+    threads:
+        16
+    shell:
+        'sambamba index -t 8 {input} '
+           
+rule bam_namesort:
+    input:
+       bam = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam')
+    output:
+        join(ALIGN_INTERIM, '{aligner}', '{sample}.namesorted.bam')
+    threads:
+        16
+    shell:
+        'sambamba sort -N -p -m 24G -t 8 -o {output} {input.bam}'

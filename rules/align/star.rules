@@ -147,7 +147,8 @@ if config['align']['star']['twopass']:
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
             genome_dir = lambda wildcards, input: os.path.dirname(input.genome)
         output:
-            bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
+            bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam')),
+            unmapped = join(STAR_INTERIM, '{sample}.Unmapped.out.mate1')
         threads:
             48
         log:
@@ -203,34 +204,3 @@ else:
             '--outFileNamePrefix {params.prefix} '
             '--readFilesIn {params.fastq} '
             '&& cp {params.prefix}Log.final.out {log} '
-
-rule star_mark_duplicates:
-    input:
-        bam = rules.star_align.output.bam,
-    output:
-        bam = join(STAR_INTERIM, '{sample}.sorted.bam')
-    threads:
-        16
-    shell:
-        'sambamba markdup -t 8 {input.bam} {output.bam} '
-
-rule star_index_bam:
-    input:
-        rules.star_mark_duplicates.output.bam
-    output:
-        bai = join(STAR_INTERIM, '{sample}.sorted.bam.bai')
-    threads:
-        16
-    shell:
-        'sambamba index -t 8 {input} '
-           
-rule star_namesort_bam:
-    input:
-       rules.star_mark_duplicates.output.bam,
-       rules.star_index_bam.output
-    output:
-        join(STAR_INTERIM, '{sample}.namesorted.bam')
-    threads:
-        16
-    shell:
-        'sambamba sort -N -p -m 24G -t 8 -o {output} {input}'

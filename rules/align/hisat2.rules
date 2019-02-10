@@ -1,22 +1,46 @@
-#!/usr/bin/env python
 #-*- mode: snakemake -*-
+"""
+
+Snakemake rules for aligning rna-seq fastq files to genome using the
+HISAT2 aligner.
+"""
 
 import os
 from os.path import join
 
+extra_conf_fn = srcdir('hisat2.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)
 
+HISAT_INTERIM = join(ALIGN_INTERIM, 'hisat2')
+HISAT_PROCESSED = join(ALIGN_PROCESSED, 'hisat2')
 
-rule ensembl_hisat2_genome_index:
+def hisat2_input(wildcards):
+    R1 = get_processed_fastq_R1(wildcards)
+    paired_end = config['samples'][wildcards.sample]['paired_end']
+    if paired_end:
+        R2 = get_processed_fastq_R2(wildcards)
+    else:
+        R2 = []
+    input = '-1 ' + ','.join(R1)
+    if paired_end:
+        input += ' -2 ' + ','.join(R2)
+    return input
+
+rule hisat2_index:
     input:
-        genome = join(ENSEMBL_EXT, 'fasta', 'genome.fa')
+        genome = join(REF_DIR, 'fasta', 'genome.fa')
     params:
-        index_dir =  join(ENSEMBL_EXT, 'hisat2')
+        index_dir =  join(REF_DIR, 'hisat2'),
+        prefix = join(REF_DIR, 'hisat2', 'hisat2')
     output:
-         join(ENSEMBL_EXT, 'hisat2', 'genome.1.ht2')
+         join(REF_DIR, 'hisat2', 'hisat2.1.ht2')
     threads:
         24
     log:
-        join(ENSEMBL_EXT, 'logs', 'HISAT2.index.log')
+        join(REF_DIR, 'logs', 'HISAT2.index.log')
     singularity:
         'docker://gcfntnu/ensembl:0.1' 
     shell:
@@ -24,45 +48,34 @@ rule ensembl_hisat2_genome_index:
         '-f '
         '-p {threads} '
         '{input.genome} '
-        '{params.index_dir}'
-
-def hisat2_input(wildcards):
-    fastq_files = get_fastq()
-    paired_end = config['samples']['paired_end']
-    if paired_end:
-        R1 = fastq_files[::2]
-        R2 = fastq_files[1::2]
-    else:
-        R1 = fastq_files
-        
-    input = '-1 ' + ','.join(R1)
-    if paired_end:
-        input += ' -2 ' + ','.join(R2)
-    return input
+        '{params.prefix} '
     
-rule hisat_map:
+rule hisat2_align:
     input:
-        fastq = get_fastq,
-        index = genome('indices/hisat2/vanilla/genome.1.ht2')
+        fastq = get_processed_fastq_R1,
+        index = rules.hisat2_index.output
     params:
-        index = join(config['db'], 'indices/hisat2/vanilla')
-        unaligned = join(TMP_DIR, '{sample}.unaligned.fastq.gz')
+        input = hisat2_input,
+        index = rules.hisat2_index.params.prefix,
+        unaligned = join(HISAT_INTERIM, '{sample}.unaligned.fastq.gz')
     output:
-        sam = temp(join(TMP_DIR, '{sample}.sam')) 
+        sam = temp(join(HISAT_INTERIM, '{sample}.out.sam')) 
     threads:
-        14
+        16
     shell:
         'hisat2 '
-        '-x {params.index} '
-        '{params.hisat2_input} '
-        '-S {output} '
         '-p {threads} '
-        '--un-conc-gz {params.unaligned}'
+        '--un-conc-gz {params.unaligned} '
+        '-x {params.index} '
+        '{params.input} '
+        '-S {output.sam}'
 
-rule sam2bam:
+rule hisat2_bam:
     input:
-        rules.hisat_map.output
+        sam = rules.hisat2_align.output.sam
     output:
-        join(TMP_DIR, '{sample}.hisat2.sorted.bam')
+        bam = temp(join(ALIGN_INTERIM, 'hisat2', '{sample}.Aligned.sortedByCoord.out.bam'))
+    threads:
+        4
     shell:
-        'samtools -bS - {input} | samtools sort -o {output}'
+         'sambamba view -S -f bam {input.sam} | sambamba sort -t {threads} -o {output.bam} /dev/stdin '
