@@ -51,7 +51,8 @@ rule star_genome_index:
         genome = join(REF_DIR, 'fasta', 'genome.fa'),
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
     output:
-         join(REF_DIR, 'star', 'SA')
+         index = join(REF_DIR, 'star', 'SAindex'),
+         chr_len = join(REF_DIR, 'star', 'chrNameLength.txt')
     params:
         index_dir =  join(REF_DIR, 'star'),
         readlength = '66'

@@ -1,0 +1,16 @@
+#-*- mode:snakemake -*-
+extra_conf_fn = srcdir('preseq.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)
+
+rule qc_bam_preseq_lc_extrap:
+    input:
+        bam = get_sorted_bam
+    output:
+        'logs/{sample}/ccurve.txt'
+    singularity:
+        'docker://quay.io/biocontainers/preseq:2.0.3--h26b358d_2'
+    shell:
+        'preseq lc_extrap -v -B {input.bam} -o {output}'

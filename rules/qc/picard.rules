@@ -20,7 +20,7 @@ rule qc_bam_picard_rnametrics:
         ref_flat = join(REF_DIR, 'genes', 'genes.refflat.gz'),
         rrna = rules.qc_bam_create_ribointervals.output
     output:
-        metrics = 'logs/{sample}.rnaseq.metrics'
+        metrics = 'logs/{sample}/collect_rnaseq.metrics'
     params:
         java_opt="-Xms2g -Xmx16g"
     threads:
@@ -51,11 +51,54 @@ rule qc_bam_picard_collect:
         'docker://gcfntnu/ensembl:0.1'
     shell:
         'picard CollectInsertSizeMetrics '
-        'INPUT={input.bam}'
-        'H={log}'
+        'INPUT={input.bam} '
+        'H={log} '
         'OUTPUT={output} '
+
+rule qc_bam_rseqc_read_distribution:
+    input:
+        bam = get_sorted_bam,
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    singularity:
+        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
+    output:
+        'logs/{sample}/rseqc.readdist.txt'
+    shell:
+        'read_distribution.py  -i {input.bam} -r {input.bed} > {output}'
+
+rule qc_bam_rseqc_junction_annotation:
+    input:
+        bam = get_sorted_bam,
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    singularity:
+        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
+    params:
+        output = 'logs/{sample}/rseqc'
+    shadow:
+        'shallow'
+    output:
+        'logs/{sample}/rseqc.junction.xls'
+    shell:
+        'junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.output}'
+        
+rule qc_bam_rseqc_junction_saturation:
+    input:
+        bam = get_sorted_bam,
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    singularity:
+        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
+    params:
+        output = 'logs/{sample}/rseqc'
+    shadow:
+        'shallow'
+    output:
+        'logs/{sample}/rseqc.junctionSaturation_plot.r'
+    shell:
+        'junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.output}'
+
 
 rule qc_bam:
     input:
-       expand( 'logs/{sample}.rnaseq.metrics', sample=SAMPLES)
+       expand( 'logs/{sample}/collect_rnaseq.metrics', sample=SAMPLES)
         
+

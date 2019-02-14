@@ -5,7 +5,7 @@ rule bam_bigwig:
         chrom_size = join(REF_DIR, 'star', 'chrLength.txt'),
         genome = join(REF_DIR, 'fasta', 'genome.fa')
     output:
-        bw = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam')
+        bw = join(ALIGN_INTERIM, '{aligner}', '{sample}.bigwig')
     shell:
         """
         bedtools genomecov -bg -ibam {input} -split -scale 1.0 > test.bedgraph

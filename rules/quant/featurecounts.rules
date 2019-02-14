@@ -23,7 +23,7 @@ def featurecounts_strand(wildcards, **kw):
 def featurecounts_paired_end(wildcards, **kw):
     sample = config['samples'][wildcards.sample]
     if sample['paired_end']:
-        return '-B -C '
+        return '-p -B -C '
     return ''
 
 rule featurecounts:
