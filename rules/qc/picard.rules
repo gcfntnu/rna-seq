@@ -2,9 +2,11 @@
 rule qc_bam_create_ribointervals:
     input:
         gtf = join(REF_DIR, 'genes', 'genes.gtf'),
-        bam = expand(get_sorted_bam, sample=SAMPLES[0])
+        bam = join(ALIGN_INTERIM, config.get('align', {}).get('method', 'star'), '{}.sorted.bam'.format(SAMPLES[0]))
     output:
         join(REF_DIR, 'genes', 'rrna.intervals')
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
     shell:
         """
         samtools view -H {input.bam} > /mnt/scratch/dummy
@@ -16,13 +18,15 @@ rule qc_bam_picard_rnametrics:
     input:
         bam = get_sorted_bam,
         ref_flat = join(REF_DIR, 'genes', 'genes.refflat.gz'),
-        rrna = rules.create_ribointervals.output
+        rrna = rules.qc_bam_create_ribointervals.output
     output:
         metrics = 'logs/{sample}.rnaseq.metrics'
     params:
         java_opt="-Xms2g -Xmx16g"
     threads:
-        4        
+        4
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
     shell:
         'picard CollectRnaSeqMetrics '
         '{params.java_opt} '
@@ -43,8 +47,15 @@ rule qc_bam_picard_collect:
         'logs/{sample}/insert_size_metric.tsv'
     log:
         'logs/{sample}/insert_size_metric.pdf'
+    singularity:
+        'docker://gcfntnu/ensembl:0.1'
     shell:
         'picard CollectInsertSizeMetrics '
         'INPUT={input.bam}'
         'H={log}'
         'OUTPUT={output} '
+
+rule qc_bam:
+    input:
+       expand( 'logs/{sample}.rnaseq.metrics', sample=SAMPLES)
+        

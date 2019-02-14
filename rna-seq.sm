@@ -79,6 +79,8 @@ include:
     'rules/align.rules'
 include:
     'rules/quant.rules'
+include:
+    'rules/qc.rules'
 
     
 onsuccess:
