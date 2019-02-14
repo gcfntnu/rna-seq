@@ -4,6 +4,9 @@ import argparse
 __version__ = '0.01'
 __author__ = 'Arnar Flatberg (arnar.flatberg@ntnu.no)'
 
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 
 def setup_parser():
@@ -12,19 +15,17 @@ def setup_parser():
                                      formatter_class=formatter_class)
     parser.add_argument('--version', action='version',
                         version='%(prog)s {}'.format(__version__))
-    parser.add_argument('--min-unique-mappers', default=3,, type=int,
+    parser.add_argument('--min-unique-mappers', default=3, type=int,
                         help='Required number of unique mappers spanning junction')
-    parser.add_argument('--max-overhang', default=10, type=int
+    parser.add_argument('--max-overhang', default=10, type=int,
                         help='Required maximum overhang of junction')
     parser.add_argument('--samples_detected', default=0.2,
                         help='Required number samples where junction is detected. A float between 0 and 1 will be interpreted as fraction of max samples_detected. An integer is a specific number of samples')
-    parser.add_argument('-v', '--verbose', dest='verbose_count',
+    parser.add_argument('-v', '--verbose', dest='verbose',
                         action='count', default=0,
                         help='increases log verbosity for each occurence')
     parser.add_argument('input', help='File of all junctions found by STAR firstpass')
-
-
-parser = setup_parser()
+    return parser
 
 if __name__ == '__main__':
     parser = setup_parser()
@@ -51,10 +52,10 @@ if __name__ == '__main__':
         n1 = sum(df['max_overhang'] > args.max_overhang)
         n2 = sum(df['samples_detected'] > samples_detected)
         final_tot = dff.shape[0]
-        print('Total number of junctions in:                         {}'.format(tot))
-        print('Number of junctions with more than {} unique mappers: {}'.format(args.min_unique_mapper, n))
-        print('Number of junctions with max overhang over {}:        {}'.format(args.max_overhang, n1))
-        print('Number of junctions detected in more than {} samples: {}'.format(samples_detected, n2))
-        print('Number of junctions after applying all filters:       {}'.format(final_tot))
+        print('Total number of junctions in:                         {}'.format(tot), file=sys.stderr)
+        print('Number of junctions with more than {} unique mappers: {}'.format(args.min_unique_mappers, n), file=sys.stderr)
+        print('Number of junctions with max overhang over {}:        {}'.format(args.max_overhang, n1), file=sys.stderr)
+        print('Number of junctions detected in more than {} samples: {}'.format(samples_detected, n2), file=sys.stderr)
+        print('Number of junctions after applying all filters:       {}'.format(final_tot), file=sys.stderr)
               
     dff.to_csv(sys.stdout, sep='\t', header=False, index=False)
