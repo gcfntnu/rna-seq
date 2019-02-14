@@ -14,18 +14,27 @@ FC_INTERIM = join(QUANT_INTERIM, config['align']['method'], 'featurecounts')
 FC_PROCESSED = join(QUANT_PROCESSED, 'featurecounts')
 
 ## config params
-read_orientation = config.get('read_orientation')
-STRAND = '0' if read_orientation == 'u' else '-s 1' if read_orientation == 'fr' else '-s 2'
 
+def featurecounts_strand(wildcards, **kw):
+    read_orientation = config.get('read_orientation')
+    STRAND = '0' if read_orientation == 'u' else '-s 1' if read_orientation == 'fr' else '-s 2'
+    return STRAND
+
+def featurecounts_paired_end(wildcards, **kw):
+    sample = config['samples'][wildcards.sample]
+    if sample['paired_end']:
+        return '-B -C '
+    return ''
 
 rule featurecounts:
     input:
         bam = get_namesorted_bam,
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
     params:
-        strand = STRAND,
+        strand = featurecounts_strand,
+        paired_end = featurecounts_paired_end,
         summary = join(FC_INTERIM, '{sample}', 'counts.txt.summary'),
-        paired_end = '--primary '
+        args = '--primary '
     log:
         'logs/{sample}/featurecounts.txt.summary'
     threads:
@@ -41,6 +50,7 @@ rule featurecounts:
         '-T {threads} '
         '{params.strand} '
         '{params.paired_end} '
+        '{params.args} '
         '{input.bam} '
         '&& '
         'mv {params.summary} {log}'
