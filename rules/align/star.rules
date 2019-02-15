@@ -51,7 +51,7 @@ rule star_genome_index:
         genome = join(REF_DIR, 'fasta', 'genome.fa'),
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
     output:
-         index = join(REF_DIR, 'star', 'SAindex'),
+         index = join(REF_DIR, 'star', 'Genome'),
          chr_len = join(REF_DIR, 'star', 'chrNameLength.txt')
     params:
         index_dir =  join(REF_DIR, 'star'),
@@ -76,7 +76,7 @@ rule star_genome_index:
 
 rule star_firstpass:
     input:
-        genome = join(REF_DIR, 'star', 'SA'),
+        genome = join(REF_DIR, 'star', 'Genome'),
         fastq = get_processed_fastq_R1
     params:
         prefix = lambda wildcards, output: output[0].split('SJ.out.tab')[0],
@@ -143,7 +143,7 @@ if config['align']['star']['twopass']:
     filter_sj = config['align']['star']['filter_sj']
     rule star_align:
         input:
-            genome = join(REF_DIR, 'star', 'SA'),
+            genome = join(REF_DIR, 'star', 'Genome'),
             fastq = get_processed_fastq_R1,
             sj = join(STAR_INTERIM, 'SJ.out.filtered.tab') if filter_sj else expand(rules.star_firstpass.output, sample=SAMPLES),
             mem = rules.star_clean_memory_1pass.output
@@ -179,7 +179,7 @@ if config['align']['star']['twopass']:
 else:
     rule star_align:
         input:
-            genome = join(REF_DIR, 'star', 'SA'),
+            genome = join(REF_DIR, 'star', 'Genome'),
             fastq = get_processed_fastq_R1
         params:
             fastq = star_input_params,

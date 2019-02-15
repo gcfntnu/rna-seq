@@ -15,49 +15,59 @@ rule fastp_se_join:
     input:
         _filter_get_raw_R1
     output:
-        join(FILTER_INTERIM, 'concat', 'fastp_se', '{sample}_R1.fastq.gz')
+        join(FILTER_INTERIM, 'fastp_se', 'concat', '{sample}_R1.fastq.gz')
+    threads:
+        3        
     params:
-        config['filter']['fastp']['params']
+        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+        adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
+        kit_args = LIBPREP_INFO['single_end']['fastp']['params']
     log:
         json = 'logs/{sample}/fastp.json',
         html = 'logs/{sample}/fastp.html'
     singularity:
         config['filter']['docker']
     shell:
-        ' zcat {input} | fastp --stdin -o {output.R1} -j {log.json} -h {log.html} {params}'
+        ' zcat {input} | fastp --stdin -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
 
 rule fastp_pe_join:
     input:
         join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq')
     output:
-        R1 = join(FILTER_INTERIM, 'concat', 'fastp_pe', '{sample}_R1.fastq.gz'),
-        R2 = join(FILTER_INTERIM, 'concat', 'fastp_pe', '{sample}_R2.fastq.gz')
+        R1 = join(FILTER_INTERIM, 'fastp_pe', 'concat', '{sample}_R1.fastq.gz'),
+        R2 = join(FILTER_INTERIM, 'fastp_pe', 'concat', '{sample}_R2.fastq.gz')
     threads:
         3
-    singularity:
-        config['filter']['docker']
     params:
-        config['filter']['fastp']['params']
+        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+        adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
+        kit_args = LIBPREP_INFO['paired_end']['fastp']['params']
     log:
         json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'        
+        html = 'logs/{sample}/fastp.html'
+    singularity:
+        config['filter']['docker']
     shell:
-        'cat {input} | fastp --stdin --interleaved_in -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} {params}'
+        'cat {input} | fastp --stdin --interleaved_in -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
 
 rule fastp_se:
     input:
         R1 = join(FASTQ_DIR, '{sample}_R1.fastq.gz')
     output:
         R1 = join(FILTER_INTERIM, 'fastp_se', '{sample}_R1.fastq.gz')
+    threads:
+        3
     params:
-        config['filter']['fastp']['params']
+        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+        adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
+        kit_args = LIBPREP_INFO['single_end']['fastp']['params']
     log:
         json = 'logs/{sample}/fastp.json',
         html = 'logs/{sample}/fastp.html'
     singularity:
         config['filter']['docker']
     shell:
-        'fastp -i {input.R1} -o {output.R1} -j {log.json} -h {log.html} {params}'
+        'fastp -i {input.R1} -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
 
 rule fastp_pe:
     input:
@@ -66,14 +76,16 @@ rule fastp_pe:
     output:
         R1 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R1.fastq.gz'),
         R2 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R2.fastq.gz')
+    params:
+        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+        adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
+        kit_args = LIBPREP_INFO['paired_end']['fastp']['params']
     threads:
         3
-    singularity:
-        config['filter']['docker']
-    params:
-        config['filter']['fastp']['params']
     log:
         json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'        
+        html = 'logs/{sample}/fastp.html'
+    singularity:
+        config['filter']['docker']
     shell:
-        'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} {params}'
+        'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
