@@ -21,7 +21,7 @@ rule fastp_se_join:
     params:
         args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
         adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
-        kit_args = LIBPREP_INFO['single_end']['fastp']['params']
+        kit_args = LIBPREP_INFO.get('single_end',{}).get('fastp', {}).get('params') or ''
     log:
         json = 'logs/{sample}/fastp.json',
         html = 'logs/{sample}/fastp.html'
@@ -41,7 +41,7 @@ rule fastp_pe_join:
     params:
         args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
         adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
-        kit_args = LIBPREP_INFO['paired_end']['fastp']['params']
+        kit_args = LIBPREP_INFO.get('paired_end',{}).get('fastp', {}).get('params') or ''
     log:
         json = 'logs/{sample}/fastp.json',
         html = 'logs/{sample}/fastp.html'
@@ -60,7 +60,7 @@ rule fastp_se:
     params:
         args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
         adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
-        kit_args = LIBPREP_INFO['single_end']['fastp']['params']
+        kit_args = LIBPREP_INFO.get('single_end',{}).get('fastp', {}).get('params') or ''
     log:
         json = 'logs/{sample}/fastp.json',
         html = 'logs/{sample}/fastp.html'
@@ -79,7 +79,7 @@ rule fastp_pe:
     params:
         args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
         adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
-        kit_args = LIBPREP_INFO['paired_end']['fastp']['params']
+        kit_args = LIBPREP_INFO.get('paired_end',{}).get('fastp', {}).get('params') or ''
     threads:
         3
     log:

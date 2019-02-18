@@ -21,8 +21,8 @@ FILTER_INTERIM = join(INTERIM_DIR, 'rnaseq', 'filter')
 FASTQ_DIR = config.get('fastq_dir', 'data/raw/fastq')
 LIBPREP_KIT = config.get('libprep', {}).get('kit')
 LIBPREP_INFO = config['libprep_config'].get(LIBPREP_KIT, {})
-ADAPTER = config.get('libprep', {}).get('adapter') or LIBPREP_INFO['single_end'].get('adapter')
-ADAPTER2 = config.get('libprep', {}).get('adapter2') or LIBPREP_INFO['paired_end'].get('adapter2')
+ADAPTER = config.get('libprep', {}).get('adapter') or LIBPREP_INFO.get('single_end',{}).get('adapter')
+ADAPTER2 = config.get('libprep', {}).get('adapter2') or LIBPREP_INFO.get('paired_end', {}).get('adapter2')
 
 filter_conf = config['filter']
 
