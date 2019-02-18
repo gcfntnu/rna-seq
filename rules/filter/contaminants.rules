@@ -12,6 +12,16 @@ emvec looks to be too diverse and perhaps only used when vector contamination is
 """
 from os.path import join
 
+from snakemake.remote.NCBI import RemoteProvider as NCBIRemoteProvider
+NCBI = NCBIRemoteProvider(email="arnar.flatberg@ntnu.no")
+
+rule contaminants_homo_spaiens_rrna:
+    input:
+        NCBI.remote("U13369.1.fasta", db="nuccore")
+    output:
+        join(EXT_DIR, 'ncbi', 'homo_sapiens', 'fasta', 'rrna.fa')
+    shell:
+        'mv {input}  {output}'
 
 rule contaminants_phix:
     params:

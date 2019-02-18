@@ -101,8 +101,20 @@ rule star_firstpass:
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {params.fastq} '
         '&& cp {params.prefix}Log.final.out {log} '
-        
+
+rule star_collect_1pass_junctions:
+    input:
+        junctions = expand(rules.star_firstpass.output, sample=SAMPLES)
+    params:
+        script = srcdir('scripts/sjCollapseSamples.awk')
+    output:
+        join(STAR_INTERIM, 'SJ.out.firstpass.tab')
+    shell:
+        'awk -f {params.script} {input.junctions} | sort -k1,1V -k2,2n -k3,3n > {output}'
+
 rule star_clean_memory_1pass:
+    input:
+        rules.star_collect_1pass_junctions.output
     params:
         rules.star_firstpass.params.genome_dir
     output:
@@ -117,17 +129,7 @@ rule star_clean_memory_1pass:
         '--genomeLoad Remove '
         '--outFileNamePrefix /tmp/foo '
         '|| echo "NO firstpass SHARED MEMORY" '
-
-rule star_collect_1pass_junctions:
-    input:
-        junctions = expand(rules.star_firstpass.output, sample=SAMPLES)
-    params:
-        script = srcdir('scripts/sjCollapseSamples.awk')
-    output:
-        join(STAR_INTERIM, 'SJ.out.firstpass.tab')
-    shell:
-        'awk -f {params.script} {input.junctions} | sort -k1,1V -k2,2n -k3,3n > {output}'
-
+        
 rule star_filter_junctions:
     input:
         sj = join(STAR_INTERIM, 'SJ.out.firstpass.tab')

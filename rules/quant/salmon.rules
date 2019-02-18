@@ -112,9 +112,8 @@ rule salmon_map:
         'envs/quant.yaml'
     output:
         quant = join(SALMON_INTERIM, '{sample}', 'quant.sf'),
-        log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json')
-    log:
-        'logs/{sample}/meta_info.json'
+        meta_log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json'),
+        dist_log = join(SALMON_INTERIM, '{sample}', 'libParams', 'flenDist.txt')
     shell:
         'salmon quant '
         '-i {params.index} '
@@ -127,7 +126,6 @@ rule salmon_map:
         '--seqBias '
         '-o {params.output} '
         '{params.sample_args} '
-        '&& cp {output.log}  {log}'
 
 rule salmon_quant:
     input:
