@@ -14,7 +14,7 @@ if os.path.exists(extra_conf_fn):
 
 ORG = config.get('organism', 'homo_sapiens')
 DB_CONF = config.get('db', {}).get('ensembl', {})
-ENS_RELEASE = DB_CONF.get('release', '92')
+ENS_RELEASE = str(DB_CONF.get('release', '92'))
 ENS_VER = DB_CONF.get('version', 'GRCh38')
 if ORG == 'homo_sapiens':
     ENS_NAME = '' if ENS_VER == 'GRCh38' else '/grch37'
