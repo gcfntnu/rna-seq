@@ -1,0 +1,49 @@
+#-*- mode:snakemake -*-
+"""
+UniVec is a non-redundant database of sequences commonly attached to
+cDNA or genomic DNA during the cloning process.  It was developed by
+staff at the National Center for Biotechnology Information, part of
+the National Library of Medicine at the National Institutes of
+Health. UniVec_Core is a subset of the full UniVec database.
+
+UniVec primarily consists of the unique segments from a large number
+of vectors but also includes many linker, adapter and primer
+sequences. Redundant sub-sequences have been eliminated from the
+database to make searches more efficient and to simplify
+interpretation of the results.
+
+A detailed description of UniVec is available on the web:
+  http://www.ncbi.nlm.nih.gov/VecScreen/UniVec.html
+
+UniVec_Core
+-----------
+UniVec_Core is designed for use in applications where the hits will be
+automatically processed without any human review. The sequences in
+UniVec_Core are a subset of those from the full UniVec database chosen
+to minimize the number of false positive hits.
+
+UniVec_Core includes only oligonucleotides and vectors consisting of
+bacterial, phage, viral, yeast or synthetic sequences. Vectors that
+include sequences of mammalian origin are excluded. Consequently, some
+vector contamination that could be detected using the full UniVec
+database may be missed when UniVec_Core is used.
+"""
+
+rule contaminants_univec_fasta:
+    params:
+        url = 'http://ftp.ncbi.nlm.nih.gov/pub/UniVec/UniVec',
+        url_core = 'http://ftp.ncbi.nlm.nih.gov/pub/UniVec/UniVec_Core'
+    output:
+        join(EXT_DIR, 'univec', 'fasta', 'univec.fa')
+    shell:
+        'wget {params.url_core} -O- > {output}'
+
+rule univec_anno:
+    input:
+        rules.contaminants_univec_fasta.output
+    output:
+        join(EXT_DIR, 'univec', 'anno.tsv')
+    shell:
+        """
+        grep '>' {input} | sed 's/ /\t/' > {output}
+        """

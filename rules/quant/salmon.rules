@@ -35,17 +35,6 @@ else:
     orientation = 'R' if read_orientation == 'rf' else 'F' if read_orientation == 'fr' else ''
     LIB_TYPE = 'I' + stranded + orientation
 
-def salmon_r1(wildcards):
-    """Build input args for multi fastq input
-    """
-    R1 = get_processed_fastq_R1(wildcards)
-    return ' '.join(R1)
-
-def salmon_r2(wildcards):
-    """Build input args for multi fastq input
-    """
-    R2 = get_processed_fastq_R2(wildcards)
-    return ' '.join(R2)
 
 def get_fragment_length(wildcards):
     val = config['samples'][wildcards.sample].get('Fragment_Length', 180)
@@ -64,16 +53,15 @@ def sample_args(wildcards):
     """
     args = ''
     sample = config['samples'][wildcards.sample]
-    PE = sample.get('paired_end')
-    if PE is None:
-        PE = sample.get('R2') is not None
-    else:
-        PE = bool(PE)
+    PE = sample.get('paired_end') or len(config['read_geometry']) > 1
+    fastq = get_processed_fastq(wildcards)
+    salmon_r1 = ' '.join(fastq['R1'])
     if PE:
-        args += ' -1 {} -2 {} '.format(salmon_r1(wildcards), salmon_r2(wildcards))
+        salmon_r2 = ' '.join(fastq['R2'])
+        args += ' -1 {} -2 {} '.format(salmon_r1, salmon_r2)
         args += '--gcBias '
     else:
-        args += ' -r {} '.format(salmon_r1(wildcards))
+        args += ' -r {} '.format(salmon_r1)
         args += '--fldMean {} '.format(get_fragment_length(wildcards))
         args += '--fldSD {} '.format(get_fragment_sd(wildcards))
     return args
@@ -97,7 +85,7 @@ rule salmon_transcriptome_index:
 
 rule salmon_map:
     input:
-        R1 = get_processed_fastq_R1,
+        unpack(get_processed_fastq),
         index = join(REF_DIR, 'salmon', 'refInfo.json'),
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
     params:

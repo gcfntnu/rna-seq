@@ -36,11 +36,9 @@ def star_input_params(wildcards):
     A work around in snakemake is to build the comma separated input string as a params.fastq
     
     """
-    R1 = get_processed_fastq_R1(wildcards)
-    if config['samples'][wildcards.sample]['paired_end']: 
-        R2 = get_processed_fastq_R2(wildcards)
-    else:
-        R2 = []
+    fastq = get_processed_fastq(wildcards)
+    R1 = fastq['R1']
+    R2 = fastq.get('R2', [])
     R1 = ','.join(sorted(set(R1)))
     R2 = ','.join(sorted(set(R2)))
     input_string = ' '.join([R1, R2])
@@ -76,8 +74,8 @@ rule star_genome_index:
 
 rule star_firstpass:
     input:
-        genome = join(REF_DIR, 'star', 'Genome'),
-        fastq = get_processed_fastq_R1
+        unpack(get_processed_fastq),
+        genome = join(REF_DIR, 'star', 'Genome')
     params:
         prefix = lambda wildcards, output: output[0].split('SJ.out.tab')[0],
         fastq = star_input_params,
@@ -94,8 +92,7 @@ rule star_firstpass:
         'STAR '
         '--runThreadN {threads} '
         '--genomeDir {params.genome_dir} '
-        '--genomeLoad LoadAndKeep ' 
-        '--readFilesCommand zcat '
+        '--genomeLoad LoadAndKeep '
         '--outFilterType BySJout '
         '--outSAMtype None '
         '--outFileNamePrefix {params.prefix} '
@@ -145,8 +142,8 @@ if config['align']['star']['twopass']:
     filter_sj = config['align']['star']['filter_sj']
     rule star_align:
         input:
+            unpack(get_processed_fastq),
             genome = join(REF_DIR, 'star', 'Genome'),
-            fastq = get_processed_fastq_R1,
             sj = join(STAR_INTERIM, 'SJ.out.filtered.tab') if filter_sj else expand(rules.star_firstpass.output, sample=SAMPLES),
             mem = rules.star_clean_memory_1pass.output
         params:
@@ -166,7 +163,6 @@ if config['align']['star']['twopass']:
             'STAR '
             '--runThreadN {threads} '
             '--genomeDir {params.genome_dir} '
-            '--readFilesCommand zcat '
             '--outSAMtype BAM SortedByCoordinate '
             '--outFilterType BySJout '
             '--sjdbFileChrStartEnd {input.sj} '
@@ -181,8 +177,8 @@ if config['align']['star']['twopass']:
 else:
     rule star_align:
         input:
-            genome = join(REF_DIR, 'star', 'Genome'),
-            fastq = get_processed_fastq_R1
+            unpack(get_processed_fastq),
+            genome = join(REF_DIR, 'star', 'Genome')
         params:
             fastq = star_input_params,
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
@@ -200,7 +196,6 @@ else:
             '--runThreadN {threads} '
             '--genomeDir {params.genome_dir} '
             '--genomeLoad LoadAndKeep '
-            '--readFilesCommand zcat '
             '--limitBAMsortRAM 20000000000 ' 
             '--outSAMtype BAM SortedByCoordinate '
             '--outFilterType BySJout '

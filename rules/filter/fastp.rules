@@ -1,9 +1,12 @@
 #-*- mode:snakemake -*-
 
+ADAPTER = config.get('adapter') or LIBPREP['single_end'].get('adapter')
+ADAPTER2 = config.get('adapter2') or LIBPREP['paired_end'].get('adapter2')
+PE = len(config['read_geometry']) > 1
+
 rule fastp_interleave_fastq:
     input:
-        R1 = _filter_get_raw_R1,
-        R2 = _filter_get_raw_R2,
+        unpack(get_raw_fastq)
     output:
         pipe(join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq'))
     params:
@@ -11,81 +14,152 @@ rule fastp_interleave_fastq:
     shell:
         '{params.script} <(zcat {input.R1}) <(zcat {input.R2}) > {output}'
 
-rule fastp_se_join:
-    input:
-        _filter_get_raw_R1
-    output:
-        join(FILTER_INTERIM, 'fastp_se', 'concat', '{sample}_R1.fastq.gz')
-    threads:
-        3        
-    params:
-        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
-        adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
-        kit_args = LIBPREP_INFO.get('single_end',{}).get('fastp', {}).get('params') or ''
-    log:
-        json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'
-    singularity:
-        config['filter']['docker']
-    shell:
-        ' zcat {input} | fastp --stdin -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
+if PE:
+    rule fastp_join:
+        input:
+            join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq.gz')
+        output:
+            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
+            R2 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp' '{sample}_R2.fastq')
+        threads:
+            3
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+            adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
+            kit_args = LIBPREP.get('paired_end',{}).get('fastp', {}).get('params') or ''
+        log:
+            json = 'logs/{sample}/fastp.json',
+            html = 'logs/{sample}/fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            'cat {input} | fastp --stdin --interleaved_in -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
 
-rule fastp_pe_join:
-    input:
-        join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq')
-    output:
-        R1 = join(FILTER_INTERIM, 'fastp_pe', 'concat', '{sample}_R1.fastq.gz'),
-        R2 = join(FILTER_INTERIM, 'fastp_pe', 'concat', '{sample}_R2.fastq.gz')
-    threads:
-        3
-    params:
-        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
-        adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
-        kit_args = LIBPREP_INFO.get('paired_end',{}).get('fastp', {}).get('params') or ''
-    log:
-        json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'
-    singularity:
-        config['filter']['docker']
-    shell:
-        'cat {input} | fastp --stdin --interleaved_in -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
+    rule fastp:
+        input:
+            unpack(get_raw_fastq)
+        output:
+            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
+            R2 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp' '{sample}_R2.fastq')
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+            adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
+            kit_args = LIBPREP.get('paired_end',{}).get('fastp', {}).get('params') or ''
+        threads:
+            3
+        log:
+            json = 'logs/{sample}/{sample}.fastp.json',
+            html = 'logs/{sample}/{sample}.fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
 
-rule fastp_se:
-    input:
-        R1 = join(FASTQ_DIR, '{sample}_R1.fastq.gz')
-    output:
-        R1 = join(FILTER_INTERIM, 'fastp_se', '{sample}_R1.fastq.gz')
-    threads:
-        3
-    params:
-        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
-        adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
-        kit_args = LIBPREP_INFO.get('single_end',{}).get('fastp', {}).get('params') or ''
-    log:
-        json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'
-    singularity:
-        config['filter']['docker']
-    shell:
-        'fastp -i {input.R1} -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
+    rule fastp_join_skip:
+        input:
+            join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq')
+        output:
+            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip', '{sample}_R1.fastq'),
+            R2 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip' '{sample}_R2.fastq')
+        threads:
+            3
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 -A -Q'
+        log:
+            json = 'logs/{sample}/fastp.json',
+            html = 'logs/{sample}/fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            'cat {input} | fastp --stdin --interleaved_in -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
+            
+    rule fastp_skip:
+        input:
+            unpack(get_raw_fastq)
+        output:
+            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip', '{sample}_R1.fastq'),
+            R2 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip' '{sample}_R2.fastq')
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 -A -Q ',
+        threads:
+            3
+        log:
+            json = 'logs/{sample}/{sample}.fastp.json',
+            html = 'logs/{sample}/{sample}.fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
 
-rule fastp_pe:
-    input:
-        R1 = join(FASTQ_DIR, '{sample}_R1.fastq.gz'),
-        R2 = join(FASTQ_DIR, '{sample}_R2.fastq.gz')
-    output:
-        R1 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R1.fastq.gz'),
-        R2 = join(FILTER_INTERIM, 'fastp_pe', '{sample}_R2.fastq.gz')
-    params:
-        args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
-        adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
-        kit_args = LIBPREP_INFO.get('paired_end',{}).get('fastp', {}).get('params') or ''
-    threads:
-        3
-    log:
-        json = 'logs/{sample}/fastp.json',
-        html = 'logs/{sample}/fastp.html'
-    singularity:
-        config['filter']['docker']
-    shell:
-        'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {log.json} -h {log.html} --thread {threads} {params}'
+else:
+    rule fastp_join:
+        input:
+            unpack(get_raw_fastq)
+        output:
+            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq')
+        threads:
+            3        
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+            adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
+            kit_args = LIBPREP.get('single_end',{}).get('fastp', {}).get('params') or ''
+        log:
+            json = 'logs/{sample}/{sample}.fastp.json',
+            html = 'logs/{sample}/{sample}.fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            ' zcat {input} | fastp --stdin -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
+
+    rule fastp:
+        input:
+            unpack(get_raw_fastq)
+        output:
+            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq')
+        threads:
+            3
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
+            adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
+            kit_args = LIBPREP.get('single_end',{}).get('fastp', {}).get('params') or ''
+        log:
+            json = 'logs/{sample}/{sample}.fastp.json',
+            html = 'logs/{sample}/{sample}.fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            'fastp -i {input.R1} -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
+            
+    rule fastp_join_skip:
+        input:
+            unpack(get_raw_fastq)
+        output:
+            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip', '{sample}_R1.fastq')
+        threads:
+            3        
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 -A -Q '
+        log:
+            json = 'logs/{sample}/{sample}.fastp.json',
+            html = 'logs/{sample}/{sample}.fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            ' zcat {input} | fastp --stdin -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}'
+
+    rule fastp_skip:
+        input:
+            unpack(get_raw_fastq)
+        output:
+            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip', '{sample}_R1.fastq')
+        params:
+            args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 -A -Q ',
+        threads:
+            3
+        log:
+            json = 'logs/{sample}/{sample}.fastp.json',
+            html = 'logs/{sample}/{sample}.fastp.html'
+        singularity:
+            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+        shell:
+            'fastp -i {input.R1} -o {output.R1} -j {log.json} -h {log.html} --thread {threads} {params}' 

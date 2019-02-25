@@ -18,14 +18,12 @@ HISAT_INTERIM = join(ALIGN_INTERIM, 'hisat2')
 HISAT_PROCESSED = join(ALIGN_PROCESSED, 'hisat2')
 
 def hisat2_input(wildcards):
-    R1 = get_processed_fastq_R1(wildcards)
-    paired_end = config['samples'][wildcards.sample]['paired_end']
-    if paired_end:
-        R2 = get_processed_fastq_R2(wildcards)
-    else:
-        R2 = []
+    fastq = get_processed_fastq(wildcards)
+    PE = sample.get('paired_end') or len(config['read_geometry']) > 1
+    R1 = fastq['R1']
     input = '-1 ' + ','.join(R1)
     if paired_end:
+        R2 = fastq.get('R2', [])
         input += ' -2 ' + ','.join(R2)
     return input
 
@@ -52,7 +50,7 @@ rule hisat2_index:
     
 rule hisat2_align:
     input:
-        fastq = get_processed_fastq_R1,
+        unpack(get_processed_fastq),
         index = rules.hisat2_index.output
     params:
         input = hisat2_input,

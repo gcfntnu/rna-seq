@@ -12,3 +12,10 @@ if not config.get('ref_dir'):
     if config['db']['reference'] == 'gencode':
         include:
             'db/gencode.db'
+
+include:
+    'db/spikein.db'
+include:
+    'db/contaminants.db'
+include:
+    'db/rrna.db'

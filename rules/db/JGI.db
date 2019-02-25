@@ -1,0 +1,32 @@
+#-*- mode:snakemake -*-
+"""
+http://seqanswers.com/forums/archive/index.php/t-42552.html
+bbmap.sh in=ref.fa 
+bbduk.sh -Xmx1g in=reads.fq out=clean.fq ref=phix.fasta k=31 hdist=1
+"""
+
+rule jgi_bacterial_eukaryot:
+    params:
+        url = 'http://portal.nersc.gov/dna/microbial/assembly/bushnell/fusedEPmasked2.fa.gz',
+    output:
+        join(EXT_DIR, 'JGI', 'fasta', 'fusedEPmasked2.fa')
+    shell:
+        """wget -O- {params.url}  | gunzip -c | sed 's/ /_/g' > {output}"""
+
+
+rule jgi_bacterial_prokaryot:
+    params:
+        url = 'http://portal.nersc.gov/dna/microbial/assembly/bushnell/fusedERPBBmasked2.fa.gz',
+    output:
+        join(EXT_DIR, 'JGI', 'fasta', 'fusedERPBBmasked2.fa.gz')
+    shell:
+        """wget -O- {params.url}  | gunzip -c | sed 's/ /_/g' > {output}"""
+
+rule jgi_ribokmers:
+    params:
+        url = 'http://portal.nersc.gov/dna/microbial/assembly/bushnell/riboKmers.fa.gz'
+    output:
+        join(EXT_DIR, 'JGI', 'rrna', 'ribokmers.fa.gz')
+    shell:
+        'wget {params.url} -O- > {output}'
+    

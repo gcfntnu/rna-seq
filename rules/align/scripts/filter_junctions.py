@@ -17,7 +17,7 @@ def setup_parser():
                         version='%(prog)s {}'.format(__version__))
     parser.add_argument('--min-unique-mappers', default=3, type=int,
                         help='Required number of unique mappers spanning junction')
-    parser.add_argument('--max-overhang', default=10, type=int,
+    parser.add_argument('--max-overhang', default=0.2, type=int,
                         help='Required maximum overhang of junction')
     parser.add_argument('--samples_detected', default=0.2,
                         help='Required number samples where junction is detected. A float between 0 and 1 will be interpreted as fraction of max samples_detected. An integer is a specific number of samples')
