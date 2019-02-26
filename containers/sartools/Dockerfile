@@ -25,7 +25,6 @@ RUN conda config --add channels defaults && \
     conda config --add channels conda-forge
 
 RUN conda install --quiet --yes \
-    'r-base' \
-    'r-argparse' \ 
+    'r-optparse' \
     'r-sartools' && \
     conda clean -tipsy
