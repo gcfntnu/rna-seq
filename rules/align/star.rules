@@ -61,7 +61,7 @@ rule star_genome_index:
     log:
         join(REF_DIR, 'logs', 'STAR.index.log')
     singularity:
-        'docker://gcfntnu/ensembl:0.1' 
+        'docker://flatberg/star:2.6.1d' 
     shell:
         'STAR '
         '--runThreadN {threads} '
@@ -86,8 +86,8 @@ rule star_firstpass:
         48
     log:
         'logs/{sample}/1pass.Log.final.out'
-    conda:
-        'envs/align.yaml'
+    singularity:
+        'docker://flatberg/star:2.6.1d'
     shell: 
         'STAR '
         '--runThreadN {threads} '
@@ -116,8 +116,8 @@ rule star_clean_memory_1pass:
         rules.star_firstpass.params.genome_dir
     output:
         temp(touch('.star.mem.1pass.cleaned'))
-    conda:
-        'envs/align.yaml'
+    singularity:
+        'docker://flatberg/star:2.6.1d'                
     priority:
         0
     shell:
@@ -157,8 +157,8 @@ if config['align']['star']['twopass']:
             48
         log:
             'logs/{sample}/Log.final.out'
-        conda:
-            'envs/align.yaml'
+        singularity:
+            'docker://flatberg/star:2.6.1d'    
         shell: 
             'STAR '
             '--runThreadN {threads} '
@@ -189,8 +189,8 @@ else:
             16
         log:
             'logs/{sample}/Log.final.out'
-        conda:
-            'envs/align.yaml'    
+        singularity:
+            'docker://flatberg/star:2.6.1d'
         shell: 
             'STAR '
             '--runThreadN {threads} '

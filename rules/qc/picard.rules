@@ -123,9 +123,7 @@ rule qc_bam_rseqc_tin:
 rule qc_bam:
     input:
        expand( 'logs/{sample}/{sample}.readdist.txt', sample=SAMPLES),
-       expand( 'logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES),
-       expand( 'logs/{sample}/{sample}.inner_distance.txt', sample=SAMPLES),
-       expand( 'logs/{sample}/{sample}.tin.txt', sample=SAMPLES),
+       expand( 'logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES)
        
         
 
