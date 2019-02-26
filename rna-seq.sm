@@ -88,27 +88,15 @@ include:
     'rules/qc.rules'
 
 
-rule multiqc_config:
+rule sample_info:
     output:
-        '.multiqc_config.yaml'
-    shell:
-        """
-        printf "extra_fn_clean_exts:\n    - '.namesorted'\n    - '_R1'\n" > {output}
-        """
-    
-rule multiqc_summary:
-    input:
-        config = rules.multiqc_config.output,
-        salmon = expand(rules.salmon_map.output.meta_log, sample=SAMPLES),
-        salmon2 = expand(rules.salmon_map.output.dist_log, sample=SAMPLES)
+        'data/processed/sample_info.tsv'
     singularity:
-        'docker://gcfntnu/multiqc:dev-py27'
+        'docker://fastgenomics/pandas:0.22-p36-v3'
     params:
-        input = expand('logs/{sample}', sample=SAMPLES)
-    output:
-        'multiqc_report.html'
+        script = srcdir('scripts/create_sampleinfo.py')
     shell:
-        'multiqc -f -c {input.config} {params.input} {input.salmon} {input.salmon2}'
+        'python {params.script} config.yaml > {output}'
 
 onsuccess:
     # write config
@@ -117,11 +105,11 @@ onsuccess:
     import yaml
     
     dt = datetime.now()
-    final_conf_fn = 'single-cell_{}_{}_{}.success.config'.format(dt.year, dt.month, dt.day)
+    final_conf_fn = 'rna-seq_{}_{}_{}.success.config'.format(dt.year, dt.month, dt.day)
     if os.path.exists(final_conf_fn):
         base_fn = copy.copy(final_conf_fn)
         for i in range(999):
-            final_conf_fn = 'single-cell_{}_{}_{}_#{}.success.config'.format(dt.year, dt.month, dt.day, i)
+            final_conf_fn = 'rna-seq_{}_{}_{}_#{}.success.config'.format(dt.year, dt.month, dt.day, i)
             if not os.path.exists(final_conf_fn):
                 break
     if os.path.exists(final_conf_fn):

@@ -1,0 +1,23 @@
+#-*- mode: snakemake -*-
+
+rule multiqc_config:
+    output:
+        '.multiqc_config.yaml'
+    shell:
+        """
+        printf "extra_fn_clean_exts:\n    - '.namesorted'\n    - '_R1'\n" > {output}
+        """
+    
+rule multiqc_summary:
+    input:
+        config = rules.multiqc_config.output,
+        salmon = expand(rules.salmon_map.output.meta_log, sample=SAMPLES),
+        salmon2 = expand(rules.salmon_map.output.dist_log, sample=SAMPLES)
+    singularity:
+        'docker://gcfntnu/multiqc:dev-py27'
+    params:
+        input = expand('logs/{sample}', sample=SAMPLES)
+    output:
+        'multiqc_report.html'
+    shell:
+        'multiqc -f -c {input.config} {params.input} {input.salmon} {input.salmon2}'

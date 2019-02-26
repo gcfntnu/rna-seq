@@ -25,3 +25,5 @@ include:
     'qc/picard.rules'
 include:
     'qc/preseq.rules'
+include:
+    'qc/multiqc.rules'

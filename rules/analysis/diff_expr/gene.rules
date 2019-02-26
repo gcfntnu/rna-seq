@@ -19,10 +19,7 @@ Dependencies
 """
 import yaml
 
-
 # load analysis config
-import snakemake
-from snakemake.workflow import srcdir
 model_fn = srcdir('gene_diffexp_config.yaml')
 model = yaml.load(open(model_fn))
 
