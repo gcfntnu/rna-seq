@@ -1,0 +1,43 @@
+
+rule sartools_deseq2:
+    input:
+        target = 'data/processed/sample_info.tsv',
+        counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
+    params:
+        script = srcdir('scripts/template_script_DESeq2_CL.r'),
+        project_id = config['project_id'],
+        condition = 'Group',
+        ref_level = 'Mock'
+    singularity:
+       'docker://flatberg/sartools:1.6.6'
+    shell:
+        'Rscript {params.script} '
+        '--output data/processed/rnaseq/sartools '
+        '--projectName {params.project_id} '
+        '--author "Arnar Flatberg" '
+        '--targetFile {input.target} '
+        '--countsFile {input.counts} '
+        '--varInt {params.condition} '
+        '--condRef {params.ref_level} '
+        '--colors "#3778bf,#feb308,#7bb274,#d9544d"'
+        
+rule sartools_edger:
+    input:
+        target = 'data/processed/sample_info.tsv',
+        counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
+    params:
+        script = srcdir('scripts/template_script_DESeq2_CL.r'),
+        project_id = config['project_id'],
+        condition = 'Sample_Group',
+        ref_level = 'Mock'
+    singularity:
+       'docker://flatberg/sartools:1.6.6'
+    shell:
+        'Rscript {params.script} '
+        '--output data/processed/rnaseq/sartools '
+        '--projectName {params.project_id} '
+        '--author Arnar Flatberg '
+        '--targetFile {input.target} '
+        '--countsFile {input.counts} '
+        '--varInt {params.condition} '
+        '--condRef {params.ref_level} '

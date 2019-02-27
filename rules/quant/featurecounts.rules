@@ -40,7 +40,7 @@ rule featurecounts:
     threads:
         16
     singularity:
-        'docker://gcfntnu/featurecounts:0.1'
+        'docker://quay.io/biocontainers/subread:1.6.3--h84994c4_1'
     output:
         counts = join(FC_INTERIM, '{sample}', 'counts.txt')
     shell:
@@ -63,7 +63,7 @@ rule featurecounts_quant:
         output = join(FC_PROCESSED, 'featurecounts'),
         script = srcdir('scripts/gene_quant.R')
     singularity:
-        'docker://gcfntnu/featurecounts:0.1'
+        'docker://flatberg/tximport:0.1'
     output:
         gene_counts = join(FC_PROCESSED, 'featurecounts.gene.quant'),
         tpm = join(FC_PROCESSED, 'featurecounts.gene.tpm'),

@@ -37,7 +37,7 @@ rule bam_namesort:
     input:
        bam = join(ALIGN_INTERIM, '{aligner}', '{sample}.sorted.bam')
     output:
-        join(ALIGN_INTERIM, '{aligner}', '{sample}.namesorted.bam')
+        temp(join(ALIGN_INTERIM, '{aligner}', '{sample}.namesorted.bam'))
     threads:
         16
     shell:
