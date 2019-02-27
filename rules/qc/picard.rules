@@ -1,4 +1,9 @@
+#-*- mode: snakemake -*-
+"""Picard: A set of command line tools (in Java) for manipulating high-throughput sequencing (HTS) 
+data and formats such as SAM/BAM/CRAM and VCF.
 
+https://broadinstitute.github.io/picard/
+"""
 rule qc_bam_create_ribointervals:
     input:
         gtf = join(REF_DIR, 'genes', 'genes.gtf'),
@@ -6,7 +11,7 @@ rule qc_bam_create_ribointervals:
     output:
         join(REF_DIR, 'genes', 'rrna.intervals')
     singularity:
-        'docker://gcfntnu/ensembl:0.1'
+        'docker://flatberg/refdb:0.1'
     shell:
         """
         samtools view -H {input.bam} > /mnt/scratch/dummy
@@ -26,7 +31,7 @@ rule qc_bam_picard_rnametrics:
     threads:
         4
     singularity:
-        'docker://gcfntnu/ensembl:0.1'
+        'docker://flatberg/refdb:0.1'
     shell:
         'picard CollectRnaSeqMetrics '
         '{params.java_opt} '
@@ -38,7 +43,7 @@ rule qc_bam_picard_rnametrics:
         'RIBOSOMAL_INTERVALS={input.rrna} '
         'VALIDATION_STRINGENCY=SILENT '
 
-rule qc_bam_picard_collect:
+rule qc_bam_picard_insertsize:
     input:
         bam = get_sorted_bam
     params:
@@ -48,82 +53,10 @@ rule qc_bam_picard_collect:
     log:
         'logs/{sample}/insert_size_metric.pdf'
     singularity:
-        'docker://gcfntnu/ensembl:0.1'
+        'docker://flatberg/refdb:0.1'
     shell:
         'picard CollectInsertSizeMetrics '
         'INPUT={input.bam} '
         'H={log} '
         'OUTPUT={output} '
-
-rule qc_bam_rseqc_read_distribution:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
-    output:
-        'logs/{sample}/{sample}.readdist.txt'
-    shell:
-        'read_distribution.py  -i {input.bam} -r {input.bed} > {output}'
-
-rule qc_bam_rseqc_junction_annotation:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
-    params:
-        output = 'logs/{sample}/{sample}'
-    shadow:
-        'shallow'
-    output:
-        'logs/{sample}/{sample}.junction.xls'
-    shell:
-        'junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.output}'
-        
-rule qc_bam_rseqc_junction_saturation:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
-    params:
-        output = 'logs/{sample}/{sample}'
-    shadow:
-        'shallow'
-    output:
-        'logs/{sample}/{sample}.junctionSaturation_plot.r'
-    shell:
-        'junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.output}'
-
-rule qc_bam_rseqc_inner_distance:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
-    params:
-        output = 'logs/{sample}/{sample}'
-    output:
-        'logs/{sample}/{sample}.inner_distance.txt'
-    shell:
-        'inner_distance.py -i {input.bam} -r {input.bed} -o {params.output}'
-
-rule qc_bam_rseqc_tin:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
-    output:
-        'logs/{sample}/{sample}.tin.txt'
-    shell:
-        'tin.py -i {input.bam} -r {input.bed} > {output}'       
-
-rule qc_bam:
-    input:
-       expand( 'logs/{sample}/{sample}.readdist.txt', sample=SAMPLES),
-       expand( 'logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES)
-       
-        
 

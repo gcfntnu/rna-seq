@@ -26,14 +26,15 @@ if not 'REF_DIR' in locals():
    raise ValueError
 
 ## config params
-read_orientation = config.get('read_orientation')
+read_orientation = LIBPREP.get('strand')
 if read_orientation is None:
     LIB_TYPE = 'A'
 else:
     read_orientation = read_orientation.lower()
-    stranded = 'U' if read_orientation == 'u' else 'S'
-    orientation = 'R' if read_orientation == 'rf' else 'F' if read_orientation == 'fr' else ''
-    LIB_TYPE = 'I' + stranded + orientation
+    PE = len(config['read_geometry']) > 1
+    stranded = 'U' if read_orientation == 'both' else 'S'
+    orientation = 'R'
+    LIB_TYPE = 'I' + stranded + orientation if PE else stranded + orientation
 
 
 def get_fragment_length(wildcards):

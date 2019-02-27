@@ -1,15 +1,6 @@
 #-*- mode: snakemake -*-
 """
-Snakemake rules for quality control of fastq
-
-
-Dependencies
-------------
-STAR, https://github.com/alexdobin/STAR
-
-Install:
-conda -c bionconda install star
-
+Snakemake rules for quality control of rna-seq.
 """
 
 QC_INTERIM = join(INTERIM_DIR, 'rnaseq', 'qc')
@@ -20,10 +11,21 @@ if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
         c  = yaml.load(fh) or {}
         update_config2(config, c)      
-
+include:
+    'qc/rseqc.rules'
 include:
     'qc/picard.rules'
 include:
+    'qc/fastqc.rules'
+include:
     'qc/preseq.rules'
+
+rule qc_bam:
+    input:
+       expand('logs/{sample}/{sample}.readdist.txt', sample=SAMPLES),
+       expand('logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES),
+       expand('logs/{sample}/{sample}.ccurve.txt', sample=SAMPLES),
+       expand('logs/{sample}/{sample}.sorted_fastqc.zip', sample=SAMPLES)
+       
 include:
     'qc/multiqc.rules'

@@ -3,21 +3,51 @@
 rule multiqc_config:
     output:
         '.multiqc_config.yaml'
-    shell:
-        """
-        printf "extra_fn_clean_exts:\n    - '.namesorted'\n    - '_R1'\n" > {output}
-        """
+    params:
+        html = 'data/processed/rnaseq/multiqc/qc_report.html',
+        data_dir = 'data/processed/rnaseq/multiqc/qc_data'
+    run:
+        import yaml
+        conf = {}
+        conf['title'] = config['project_id']
+        conf['subtitle'] = 'Quality Control of sequence filtering and quantification. '
+        conf['intro_text'] = 'Prior to statistical analysis the sequences needs to be filtered, aligned to a reference genome and genomic features are quantified. In RNA-seq the most common genomic features to quantify are genes or transcripts. The software `fastp` is used for adapter trimming and quality filtering. The filtred reads are then aligned to transcriptome (`Salmon` aligner) and/or aligned to reference genome using the `STAR` aligner. The number of reads supporting each gene is estimated and collected to a count matrix exported as a tab delimited file. This count matrix has genes (Ensembl identifers) as rows and samples (Sample_ID) in columns. This count matrix is used for further statistical analysis.'
+        #conf['report_comment'] = 'Report comment here ...'
+        tbl = {}
+        tbl['FastQC'] = {'percent_duplicates': False, 'percent_gc': False}
+        tbl['star'] = {'uniquely_mapped_percent': False, 'uniquely_mapped': False}
+        tbl['fastp'] = {'after_filtering_gc_content': False}
+        conf['table_columns_visible'] = tbl
+        conf['output_fn_name'] = params['html']
+        conf['data_dir_name'] = params['data_dir']
+        conf['no_version_check'] = True
+        conf['extra_fn_clean_exts'] = ['.namesorted', '_R1', '_R2', '.ccurve.txt']
+        conf['report_header_info'] = [{'Bioinformatician: ': 'Arnar Flatberg'}, {'E-mail: ': 'arnar.flatberg@ntnu.no'}, {'Phone': '920 29 102'}]
+        conf['plots_flat_numseries'] = 250
+        #custom_content = {}
+        #custom_content['order'] = ['fastp', ]
+        #conf['custom_content'] = custom_content
+        conf['module_order'] = ['fastqc', 'fastp', 'star', 'salmon', 'picard', 'rseqc', 'rna_seqc', 'preseq', 'featureCounts']
+        if config['organism'] == 'homo_sapiens':
+            conf['fastqc_config'] = {'fastqc_theoretical_gc': 'hg38_txome'}
+        
+        #module_order['fastp']
+
+        with open(output[0], 'w') as fh:
+            yaml.dump(conf, fh, default_flow_style=False)
     
 rule multiqc_summary:
     input:
         config = rules.multiqc_config.output,
         salmon = expand(rules.salmon_map.output.meta_log, sample=SAMPLES),
-        salmon2 = expand(rules.salmon_map.output.dist_log, sample=SAMPLES)
+        salmo2n = expand(rules.salmon_map.output.dist_log, sample=SAMPLES)
+        qc_bam = rules.qc_bam.input
     singularity:
         'docker://gcfntnu/multiqc:dev-py27'
     params:
-        input = expand('logs/{sample}', sample=SAMPLES)
+        STAR = expand('logs/{sample}/Log.final.out', sample=SAMPLES),
+        fastp = expand('logs/{sample}/*.fastp.json', sample=SAMPLES)
     output:
-        'multiqc_report.html'
+        rules.multiqc_config.params.html
     shell:
-        'multiqc -f -c {input.config} {params.input} {input.salmon} {input.salmon2}'
+        'multiqc -f -c {input.config} {params.STAR} {params.fastp} {input.salmon} {input.salmon2} {input.qc_bam} '

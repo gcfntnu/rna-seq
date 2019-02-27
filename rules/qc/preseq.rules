@@ -1,4 +1,8 @@
 #-*- mode:snakemake -*-
+"""Preseq: Software for predicting library complexity and genome coverage in high-throughput sequencing.
+
+http://smithlabresearch.org/software/preseq/
+"""
 extra_conf_fn = srcdir('preseq.config')
 if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
@@ -9,8 +13,12 @@ rule qc_bam_preseq_lc_extrap:
     input:
         bam = get_sorted_bam
     output:
-        'logs/{sample}/ccurve.txt'
+        'logs/{sample}/{sample}.ccurve.txt'
+    params:
+        '-P -Q ' if len(config['read_geometry']) > 1 else '-Q '
     singularity:
         'docker://quay.io/biocontainers/preseq:2.0.3--h26b358d_2'
+    threads:
+        4
     shell:
-        'preseq lc_extrap -v -B {input.bam} -o {output}'
+        'preseq lc_extrap -B {input.bam} -o {output} {params}'
