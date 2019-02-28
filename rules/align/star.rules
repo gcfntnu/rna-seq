@@ -83,7 +83,7 @@ rule star_firstpass:
     output:
         sj = join(STAR_INTERIM, '{sample}.firstpass.SJ.out.tab')
     threads:
-        48
+        24
     log:
         'logs/{sample}/1pass.Log.final.out'
     singularity:
@@ -154,7 +154,7 @@ if config['align']['star']['twopass']:
             bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam')),
             unmapped = join(STAR_INTERIM, '{sample}.Unmapped.out.mate1')
         threads:
-            48
+            24
         log:
             'logs/{sample}/Log.final.out'
         singularity:
@@ -186,7 +186,7 @@ else:
         output:
             bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
         threads:
-            16
+            24
         log:
             'logs/{sample}/Log.final.out'
         singularity:

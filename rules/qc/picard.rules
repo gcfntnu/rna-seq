@@ -11,7 +11,7 @@ rule qc_bam_create_ribointervals:
     output:
         join(REF_DIR, 'genes', 'rrna.intervals')
     singularity:
-        'docker://flatberg/refdb:0.1'
+        'docker://gcfntnu/ensembl:0.1'
     shell:
         """
         samtools view -H {input.bam} > /mnt/scratch/dummy
@@ -25,13 +25,13 @@ rule qc_bam_picard_rnametrics:
         ref_flat = join(REF_DIR, 'genes', 'genes.refflat.gz'),
         rrna = rules.qc_bam_create_ribointervals.output
     output:
-        metrics = 'logs/{sample}/collect_rnaseq.metrics'
+        metrics = 'logs/{sample}/{sample}.rnaseq.metrics'
     params:
         java_opt="-Xms2g -Xmx16g"
     threads:
         4
     singularity:
-        'docker://flatberg/refdb:0.1'
+        'docker://gcfntnu/picard:2.18'
     shell:
         'picard CollectRnaSeqMetrics '
         '{params.java_opt} '

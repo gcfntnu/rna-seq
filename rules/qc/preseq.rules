@@ -15,10 +15,10 @@ rule qc_bam_preseq_lc_extrap:
     output:
         'logs/{sample}/{sample}.ccurve.txt'
     params:
-        '-P -Q ' if len(config['read_geometry']) > 1 else '-Q '
+        '-P ' if len(config['read_geometry']) > 1 else ' '
     singularity:
         'docker://quay.io/biocontainers/preseq:2.0.3--h26b358d_2'
     threads:
-        4
+        1
     shell:
         'preseq lc_extrap -B {input.bam} -o {output} {params}'

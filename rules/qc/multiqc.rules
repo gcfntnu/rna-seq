@@ -21,7 +21,7 @@ rule multiqc_config:
         conf['output_fn_name'] = params['html']
         conf['data_dir_name'] = params['data_dir']
         conf['no_version_check'] = True
-        conf['extra_fn_clean_exts'] = ['.namesorted', '_R1', '_R2', '.ccurve.txt']
+        conf['extra_fn_clean_exts'] = ['.namesorted', '_R1', '_R2', '.ccurve.txt', '.rnaseq.metrics']
         conf['report_header_info'] = [{'Bioinformatician: ': 'Arnar Flatberg'}, {'E-mail: ': 'arnar.flatberg@ntnu.no'}, {'Phone': '920 29 102'}]
         conf['plots_flat_numseries'] = 250
         #custom_content = {}
@@ -40,7 +40,7 @@ rule multiqc_summary:
     input:
         config = rules.multiqc_config.output,
         salmon = expand(rules.salmon_map.output.meta_log, sample=SAMPLES),
-        salmo2n = expand(rules.salmon_map.output.dist_log, sample=SAMPLES)
+        salmon2 = expand(rules.salmon_map.output.dist_log, sample=SAMPLES),
         qc_bam = rules.qc_bam.input
     singularity:
         'docker://gcfntnu/multiqc:dev-py27'

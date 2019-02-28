@@ -20,7 +20,7 @@ rule mark_duplicates:
     output:
         bam = join(_STAR_INTERIM, '{sample}.sorted.bam')
     threads:
-        4
+        2
     benchmark:
         'timings/{sample}.sambamba.markdup.time'
     shell:
@@ -32,7 +32,7 @@ rule index_bam:
     output:
         bai = join(_STAR_INTERIM, '{sample}.sorted.bam.bai')
     threads:
-        4
+        1
     benchmark:
         'timings/{sample}.sambamba.index.time'
     shell:
@@ -45,7 +45,7 @@ rule namesort_bam:
     output:
         join(_STAR_INTERIM, '{sample}.namesorted.bam')
     threads:
-        8
+        4
     benchmark:
         'timings/{sample}.sambamba.namesort.time'
     shell:
