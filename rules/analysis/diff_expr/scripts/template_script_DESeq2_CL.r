@@ -11,94 +11,101 @@ library(optparse)                                    # to run the script in comm
 # options list with associated default value.
 option_list <- list( 
 make_option(c("-P", "--projectName"),
-			default=basename(getwd()),
-			dest="projectName",
-			help="name of the project used for the report [default: name of the current directory]."),
+            default=basename(getwd()),
+            dest="projectName",
+            help="name of the project used for the report [default: name of the current directory]."),
 
 make_option(c("-A", "--author"),
-			default=Sys.info()[7],
-			dest="author",
-			help="name of the report author [default: %default]."),
+            default=Sys.info()[7],
+            dest="author",
+            help="name of the report author [default: %default]."),
 
 make_option(c("-t", "--targetFile"),
-			default="target.txt",
-			dest="targetFile",
-			help="path to the design/target file [default: %default]."),
+            default="target.txt",
+            dest="targetFile",
+            help="path to the design/target file [default: %default]."),
 
 make_option(c("-r", "--countsFile"),
-			default="data/processed/rnaseq/salmon/gene.quant",
-			dest="countsFile",
-			help="path to the directory containing the HTSeq files [default: %default]."),
+            default="data/processed/rnaseq/quant/salmon/gene.quant",
+            dest="countsFile",
+            help="path to the count matrix file [default: %default]."),
+
+make_option(c("-m", "--metaFile"),
+            default="data/processed/rnaseq/quant/salmon/gene_info.tsv",
+            dest="metaFile",
+            help="path to the features info file [default: %default]."),
+
 make_option(c("-R", "--templateFile"),
-			default="src/rna-seq/rules/analysis/diff_expr/scripts/GCF_DESeq2.rmd",
-			dest="templateFile",
-			help="path to the directory R markdown template [default: %default]."),
+            default="src/rna-seq/rules/analysis/diff_expr/scripts/GCF_DESeq2.rmd",
+            dest="templateFile",
+            help="path to the directory R markdown template [default: %default]."),
+
 make_option(c("-F", "--featuresToRemove"),
-			default="alignment_not_unique,ambiguous,no_feature,not_aligned,too_low_aQual",
-			dest="FTR",
-			help="names of the features to be removed, more than once can be specified [default: %default]"),
+            default="alignment_not_unique,ambiguous,no_feature,not_aligned,too_low_aQual",
+            dest="FTR",
+            help="names of the features to be removed, more than once can be specified [default: %default]"),
 			
 make_option(c("-v", "--varInt"),
-			default="group",
-			dest="varInt", 
-			help="factor of interest [default: %default]"),
+            default="group",
+            dest="varInt", 
+            help="factor of interest [default: %default]"),
 
 make_option(c("-c", "--condRef"),
-			default="WT",
-			dest="condRef",
-			help="reference biological condition [default: %default]"),
+            default="WT",
+            dest="condRef",
+            help="reference biological condition [default: %default]"),
 
 make_option(c("-b", "--batch"),
-			default=NULL,
-			dest="batch",
-			help="blocking factor [default: %default] or \"batch\" for example"),
+            default=NULL,
+            dest="batch",
+            help="blocking factor [default: %default] or \"batch\" for example"),
 
 make_option(c("-f", "--fitType"),
-			default="parametric",
-			dest="fitType", 
-			help="mean-variance relationship: [default: %default],local or mean"),
+            default="parametric",
+            dest="fitType", 
+            help="mean-variance relationship: [default: %default],local or mean"),
 
 make_option(c("-o", "--cooksCutoff"),
-			default=TRUE,
-			dest="cooksCutoff", 
-			help="perform the outliers detection (default is TRUE)"),
+            default=TRUE,
+            dest="cooksCutoff", 
+            help="perform the outliers detection (default is TRUE)"),
 
 make_option(c("-i", "--independentFiltering"),
-			default=TRUE,
-			dest="independentFiltering",
-			help="perform independent filtering (default is TRUE)"),
+            default=TRUE,
+            dest="independentFiltering",
+            help="perform independent filtering (default is TRUE)"),
 
 make_option(c("-a", "--alpha"),
-			default=0.05,
-			dest="alpha", 
-			help="threshold of statistical significance [default: %default]"),
+            default=0.05,
+            dest="alpha", 
+            help="threshold of statistical significance [default: %default]"),
 
 make_option(c("-p", "--pAdjustMethod"),
-			default="BH",
-			dest="pAdjustMethod", 
-			help="p-value adjustment method: \"BH\" or \"BY\" [default: %default]"),
+            default="BH",
+            dest="pAdjustMethod", 
+            help="p-value adjustment method: \"BH\" or \"BY\" [default: %default]"),
 
 make_option(c("-T", "--typeTrans"),
-			default="VST",
-			dest="typeTrans", 
-			help="transformation for PCA/clustering: \"VST\" ou \"rlog\" [default: %default]"),
+            default="VST",
+            dest="typeTrans", 
+            help="transformation for PCA/clustering: \"VST\" ou \"rlog\" [default: %default]"),
 
 make_option(c("-l", "--locfunc"),
-			default="median",
-			dest="locfunc", 
-			help="median or shorth to estimate the size factors [default: %default]"),
+            default="median",
+            dest="locfunc", 
+            help="median or shorth to estimate the size factors [default: %default]"),
 
 make_option(c("-C", "--colors"),
-			default="dodgerblue,firebrick1,MediumVioletRed,SpringGreen,chartreuse,cyan,darkorchid,darkorange",
-			dest="cols",
-			help="colors of each biological condition on the plots\n\t\t\"col1,col2,col3,col4\"\n\t\t[default: %default]"),
+            default="dodgerblue,firebrick1,MediumVioletRed,SpringGreen,chartreuse,cyan,darkorchid,darkorange",
+            dest="cols",
+            help="colors of each biological condition on the plots\n\t\t\"col1,col2,col3,col4\"\n\t\t[default: %default]"),
 
 make_option(c("-O", "--output"),
-			default="data/processed/rnaseq/sartools",
-			dest="output",
-			help="output directory [default: %default]"),
+            default="data/processed/rnaseq/sartools",
+            dest="output",
+            help="output directory [default: %default]"),
 
-make_option(c("-g", "--forceCairoGraph"),
+make_option(c("--forceCairoGraph"),
             action="store_true",
             default=FALSE,
             dest="forceCairoGraph",
@@ -172,10 +179,17 @@ target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, 
 
 # loading counts
 ##counts <- loadCountData(target=target, rawDir=rawDir, featuresToRemove=featuresToRemove)
-counts <- read.delim(countsFile, sep="\t", check.names=FALSE, as.is=TRUE)
+counts <- read.delim(countsFile, sep="\t", check.names=FALSE, as.is=TRUE, row.names=1)
 counts <- as.matrix(round(counts))
 counts <- counts[,rownames(target)]
 
+## load features meta info
+info <- read.delim(opt$metaFile, sep="\t", check.names=FALSE, as.is=TRUE)
+i <- grep("gene_id.?", colnames(info))[1]
+rownames(info) <- info[,i]
+keep.cols <- intersect(c("gene_id", "gene_name", "gene_biotype", "seqname"), colnames(info))
+info <- info[,keep.cols]
+info <- info[rownames(counts),]
 
 #setwd(output)
 
@@ -187,6 +201,15 @@ out.DESeq2 <- run.DESeq2(counts=counts, target=target, varInt=varInt, batch=batc
                          locfunc=locfunc, fitType=fitType, pAdjustMethod=pAdjustMethod,
                          cooksCutoff=cooksCutoff, independentFiltering=independentFiltering, alpha=alpha)
 
+## add feature data if available
+if (!is.null(info)){
+    ids <- rownames(out.DESeq2$dds)
+    info <- info[ids,]
+    info[,"Id"] = ids
+}
+
+
+
 # PCA + clustering
 exploreCounts(object=out.DESeq2$dds, group=target[,varInt], typeTrans=typeTrans, col=colors)
 
@@ -194,6 +217,68 @@ exploreCounts(object=out.DESeq2$dds, group=target[,varInt], typeTrans=typeTrans,
 summaryResults <- summarizeResults.DESeq2(out.DESeq2, group=target[,varInt], col=colors,
                                           independentFiltering=independentFiltering, 
                                           cooksCutoff=cooksCutoff, alpha=alpha)
+
+
+
+## lets patch up the export
+exportResults.DESeq2 <- function(out.DESeq2, group, alpha=0.05, info=NULL, export=TRUE){
+  
+  dds <- out.DESeq2$dds
+  results <- out.DESeq2$results
+  
+  # comptages bruts et normalis?s
+  counts <- data.frame(Id=rownames(counts(dds)), counts(dds), round(counts(dds, normalized=TRUE)))
+  colnames(counts) <- c("Id", colnames(counts(dds)), paste0("norm.", colnames(counts(dds))))
+  # baseMean avec identifiant
+  bm <- data.frame(Id=rownames(results[[1]]),baseMean=round(results[[1]][,"baseMean"],2))
+  # merge des info, comptages et baseMean selon l'Id
+  base <- merge(counts, bm, by="Id", all=TRUE)
+  tmp <- base[,paste("norm", colnames(counts(dds)), sep=".")]
+  for (cond in levels(group)){
+    base[,cond] <- round(apply(as.data.frame(tmp[,group==cond]),1,mean),0)
+  }
+  
+  complete <- list()
+  for (name in names(results)){
+    complete.name <- base
+
+    # ajout d'elements depuis results
+    res.name <- data.frame(Id=rownames(results[[name]]),
+                           FoldChange=round(2^(results[[name]][,"log2FoldChange"]), 3),
+                           log2FoldChange=round(results[[name]][,"log2FoldChange"], 3),
+                           stat=round(results[[name]][,"stat"], 3),
+                           pvalue=results[[name]][,"pvalue"],
+                           padj=results[[name]][,"padj"])
+    complete.name <- merge(info, complete.name, by="Id", all.y=TRUE)
+    complete.name <- merge(complete.name, res.name, by="Id", all=TRUE)
+    # ajout d'elements depuis mcols(dds)
+    mcols.add <- data.frame(Id=rownames(counts(dds)),dispGeneEst=round(mcols(dds)$dispGeneEst,4),
+                            dispFit=round(mcols(dds)$dispFit,4),dispMAP=round(mcols(dds)$dispMAP,4),
+                            dispersion=round(mcols(dds)$dispersion,4),betaConv=mcols(dds)$betaConv,
+                            maxCooks=round(mcols(dds)$maxCooks,4))
+    complete.name <- merge(complete.name, mcols.add, by="Id", all=TRUE)
+    complete[[name]] <- complete.name
+    
+    if (export){
+        ## s?lection des up et down
+        up.name <- complete.name[which(complete.name$padj <= alpha & complete.name$betaConv & complete.name$log2FoldChange>=0),]
+        up.name <- up.name[order(up.name$padj),]
+        
+        down.name <- complete.name[which(complete.name$padj <= alpha & complete.name$betaConv & complete.name$log2FoldChange<=0),]
+        down.name <- down.name[order(down.name$padj),]
+      
+        ## exports
+        name <- gsub("_","",name)
+        write.table(complete.name, file=paste0("tables/",name,".complete.txt"), sep="\t", row.names=FALSE, dec=".", quote=FALSE)
+        write.table(up.name, file=paste0("tables/", name,".up.txt"), row.names=FALSE, sep="\t", dec=".", quote=FALSE)
+        write.table(down.name, file=paste0("tables/", name,".down.txt"), row.names=FALSE, sep="\t", dec=".", quote=FALSE)
+    }
+  }
+
+  return(complete)
+}
+
+summaryResults$complete <- exportResults.DESeq2(out.DESeq2, group=target[,varInt], alpha=0.05, info, export=TRUE)
 
 # save image of the R session
 #save.image(file=paste0(projectName, ".RData"))
@@ -203,7 +288,7 @@ writeReport.DESeq2 <- function(target, counts, out.DESeq2, summaryResults, majSe
                                workDir, projectName, author, targetFile, rawDir,
                                featuresToRemove, varInt, condRef, batch, fitType,
                                cooksCutoff, independentFiltering, alpha, pAdjustMethod,
-                               typeTrans, locfunc, colors){
+                               typeTrans, locfunc, colors, info=NULL){
   rmarkdown::render(input=opt$templateFile,
                     output_file=paste0(projectName, "_report.html"),
                     output_dir=workDir,
@@ -215,8 +300,10 @@ writeReport.DESeq2 <- function(target, counts, out.DESeq2, summaryResults, majSe
   cat("HTML report created\n")
 }
 
-# generating HTML report
-writeReport.DESeq2(target=target, counts=counts, out.DESeq2=out.DESeq2, summaryResults=summaryResults,
+## generating HTML report
+viz.counts <- data.frame(Id=rownames(counts), counts)
+viz.counts <- merge(info[, c("Id", "gene_name", "gene_biotype")], viz.counts, by='Id')
+writeReport.DESeq2(target=target, counts=viz.counts, out.DESeq2=out.DESeq2, summaryResults=summaryResults,
                    majSequences=majSequences, workDir=workDir, projectName=projectName, author=author,
                    targetFile=targetFile, rawDir=rawDir, featuresToRemove=featuresToRemove, varInt=varInt,
                    condRef=condRef, batch=batch, fitType=fitType, cooksCutoff=cooksCutoff,

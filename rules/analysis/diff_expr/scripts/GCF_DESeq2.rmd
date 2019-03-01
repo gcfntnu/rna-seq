@@ -54,7 +54,9 @@ The count data files and associated biological conditions are listed in the foll
 ```{r , echo=FALSE, results="asis"}
 #print(xtable(target,caption="Table 1: Data files and associated biological conditions."), type="html", include.rownames=FALSE, html.table.attributes = "align='center'")
 library(knitr)
-kable(target, digits=1, caption="Table 1: Data files and associated biological conditions.")
+ts <- target
+rownames(ts) <- NULL
+kable(ts, digits=1, caption="Table 1: Data files and associated biological conditions.")
 ```
 
 After loading the data we first have a look at the raw data table itself. The data table contains one row per annotated feature and one column per sequenced sample. Row names of this table are feature IDs (unique identifiers). The table contains raw count values representing the number of reads that map onto the features. For this project, there are `r nrow(counts)` features in the count data table.
@@ -75,9 +77,10 @@ fun_summary=function(x){
 }
 #print(xtable(apply(counts,2,fun_summary),caption="Table 3: Summary of the raw counts.",digits=0), type="html", html.table.attributes = "align='center'")
 library(knitr)
-kable(apply(counts,2,fun_summary),caption="Table 3: Summary of the raw counts.",digits=0)
+counts.c <- counts[,4:ncol(counts)]
+kable(apply(counts.c, 2, fun_summary),caption="Table 3: Summary of the raw counts.",digits=0)
 
-nbNull <- nrow(counts) - nrow(removeNull(counts)) # needed in one of the next paragraphs
+nbNull <- nrow(counts.c) - nrow(removeNull(counts.c)) # needed in one of the next paragraphs
 ```
 
 Figure 1 shows the total number of mapped and counted reads for each sample. We expect total read counts to be similar within conditions, they may be different across conditions. Total counts sometimes vary widely between replicates. This may happen for several reasons, including:
@@ -116,7 +119,13 @@ It may happen that one or a few features capture a high proportion of reads (up 
 ```{r , echo=FALSE, results="asis"}
 #print(xtable(as.matrix(majSequences),caption="Table 4: Percentage of reads associated with the sequences having the highest counts."), type="html", html.table.attributes = "align='center'")
 library(knitr)
-kable(as.matrix(majSequences),caption="Table 4: Percentage of reads associated with the sequences having the highest counts.", digits=1)
+X <- as.matrix(majSequences)
+c <- counts[,1:3]
+rownames(c) <- c[,"Id"]
+anno <- c[rownames(X),]
+X <- cbind(anno, as.data.frame(X))
+rownames(X) <- NULL
+kable(X,caption="Table 4: Percentage of reads associated with the sequences having the highest counts.", digits=1)
 ```
 
 We may wish to assess the similarity between samples across conditions. A pairwise scatter plot is produced (figure 5) to show how replicates and samples from different biological conditions are similar or different ($\text{log}_2(\text{counts}+1)$ are used instead of raw count values). Moreover, as the Pearson correlation has been shown not to be relevant to measure the similarity between replicates, the SERE statistic has been proposed as a similarity index between RNA-Seq samples [@Schulze2012]. It measures whether the variability between samples is random Poisson variability or higher. Pairwise SERE values are printed in the lower triangle of the pairwise scatter plot. The value of the SERE statistic is:
@@ -232,7 +241,9 @@ DESeq2 can perform an independent filtering to increase the detection power of d
 ```{r , echo=FALSE, results="asis"}
 if (independentFiltering){
   cat("Table 6 reports the thresholds used for each comparison and the number of features discarded by the independent filtering. Adjusted p-values of discarded features are then set to NA.\n")
-  print(xtable(summaryResults$tabIndepFiltering,caption="Table 6: Number of features discarded by the independent filtering for each comparison."),type="html",include.rownames=FALSE, html.table.attributes = "align='center'")
+  #print(xtable(summaryResults$tabIndepFiltering,caption="Table 6: Number of features discarded by the independent filtering for each comparison."),type="html",include.rownames=FALSE, html.table.attributes = "align='center'")
+  library(knitr)
+  kable(summaryResults$tabIndepFiltering,caption="Table 6: Number of features discarded by the independent filtering for each comparison.")
 } else{
   cat("For this project, no independent filtering has been performed.")
 }
@@ -243,7 +254,9 @@ if (independentFiltering){
 A p-value adjustment is performed to take into account multiple testing and control the false positive rate to a chosen level $\alpha$. For this analysis, a `r pAdjustMethod` p-value adjustment was performed [@BH1995 and BY2001] and the level of controlled false positive rate was set to `r alpha`.
 
 ```{r , echo=FALSE, results="asis"}
-print(xtable(summaryResults$nDiffTotal,caption=paste0(ifelse(independentFiltering,"Table 7: ","Table 6: "),"Number of up-, down- and total number of differentially expressed features for each comparison.")),type="html",include.rownames=FALSE, html.table.attributes = "align='center'")
+#print(xtable(summaryResults$nDiffTotal,caption=paste0(ifelse(independentFiltering,"Table 7: ","Table 6: "),"Number of up-, down- and total number of differentially expressed features for each comparison.")),type="html",include.rownames=FALSE, html.table.attributes = "align='center'")
+library(knitr)
+kable(summaryResults$nDiffTotal,caption=paste0(ifelse(independentFiltering,"Table 7: ","Table 6: "),"Number of up-, down- and total number of differentially expressed features for each comparison."))
 ```
 
 Figure 13 represents the MA-plot of the data for the comparisons done, where differentially expressed features are highlighted in red. A MA-plot represents the log ratio of differential expression as a function of the mean intensity for each feature. Triangles correspond to features having a too low/high $\log_2(\text{FC})$ to be displayed on the plot.
@@ -291,6 +304,12 @@ These files contain the following columns:
 - dispersion: final dispersion parameter used to perform the test (i.e. blue dots and circles on figure 11);
 - betaConv: convergence of the coefficients of the model (TRUE or FALSE);
 - maxCooks: maximum Cook's distance of the feature.
+
+These file _may_ contain feature annotation columns:
+
+- gene_name: Official Gene Symbol;
+- gene_biotype: Gene classification system (Ensembl);
+- seqname: Chromosome name (or alternative sequence name);
 
 # R session information and parameters
 

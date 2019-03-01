@@ -1,13 +1,13 @@
 
 rule sartools_deseq2:
     input:
-        target = 'data/processed/sample_info.tsv',
+        target = 'data/processed/sample_info2.csv',
         counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
     params:
         script = srcdir('scripts/template_script_DESeq2_CL.r'),
         project_id = config['project_id'],
-        condition = 'Group',
-        ref_level = 'Mock'
+        condition = 'Sample_Group',
+        ref_level = 'Hc'
     singularity:
        'docker://flatberg/sartools:1.6.6'
     shell:
