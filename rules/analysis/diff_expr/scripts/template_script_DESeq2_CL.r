@@ -25,6 +25,11 @@ make_option(c("-t", "--targetFile"),
             dest="targetFile",
             help="path to the design/target file [default: %default]."),
 
+make_option(c("-s", "--subset"),
+            default=NULL,
+            dest="subset",
+            help="subset samples, use comma separated list of samples with no spaces  [default: %default]."),
+
 make_option(c("-r", "--countsFile"),
             default="data/processed/rnaseq/quant/salmon/gene.quant",
             dest="countsFile",
@@ -141,6 +146,13 @@ typeTrans <- opt$typeTrans                           # transformation for PCA/cl
 locfunc <- opt$locfunc                               # "median" (default) or "shorth" to estimate the size factors
 colors <- unlist(strsplit(opt$cols, ","))            # vector of colors of each biologicial condition on the plots
 forceCairoGraph <- opt$forceCairoGraph				 # force cairo as plotting device if enabled
+
+if (!is.null(opt$subset)){
+    subset <- unlist(strsplit(opt$FTR, ","))
+} else{
+    subset <- opt$subset
+}
+
 # print(paste("workDir", workDir))
 # print(paste("projectName", projectName))
 # print(paste("author", author))
@@ -176,6 +188,13 @@ if (problem) quit(save="yes")
 					   
 # loading target file
 target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, batch=batch)
+
+if (!is.null(subset)){
+    target <- target[subset,]
+    factor_cols <- vapply(target, is.factor, logical(1))
+    target[factor_cols] <- lapply(target[factor_cols], factor)
+}
+
 
 # loading counts
 ##counts <- loadCountData(target=target, rawDir=rawDir, featuresToRemove=featuresToRemove)
