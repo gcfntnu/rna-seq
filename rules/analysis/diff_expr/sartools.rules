@@ -4,36 +4,59 @@
 https://github.com/PF2-pasteur-fr/SARTools
 """
 
-if 'models' in config['analysis']:
-    model = config['analysis']['models']['sartools']
+def get_params(wildcards, input, output):
+    model = config['models'].get(wildcards.model_name)
+    if model is None:
+        logger.error('failed to identify model: {}'.format(wildcards.model_name))
+    condition = model.get('condition', 'Sample_Group')
+    ref_level = model.get('ref_level')
+    if ref_level is None:
+        logger.error('Model description needs a `ref_level` definition')
+        sys.exit()
+    author = model.get('author', 'Arnar Flatberg')
+    colors = model.get('colors', '#3778bf,#feb308,#7bb274,#d9544d')
+    subset = model.get('subset')
+    batch = model.get('batch')
+    alpha = model.get('alpha')
+    independent_filtering = bool(model.get('independent_filtering', True)) 
+    output_dir = os.path.dirname(output[0])
+
+    params_str = '--varInt {} --condRef {} --output {} '.format(condition, ref_level, output_dir)
+    if author:
+        params_str += '--author "{}" '.format(author)
+    if colors:
+        params_str += '--colors "{}" '.format(colors)
+    if subset:
+        params_str += '--subset "{}" '.format(subset)
+    if batch:
+        params_str += '--batch {} '.format(batch)
+    if independent_filtering:
+        ifilt = 'TRUE'
+    else:
+        ifilt = 'FALSE'
+    params_str += '--independentFiltering {} '.format(ifilt)
+    if alpha:
+        params_str += '--alpha {} '.format(alpha)
     
-if os.path.exists('sartools_config.yaml'):
-    model_fn = srcdir('sartools_config.yaml')
-    model = yaml.load(open(model_fn))
-
-print(model)
-
+    return params_str
+        
 rule sartools_deseq2:
     input:
         target = 'data/processed/sample_info.tsv',
         counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
     params:
         script = srcdir('scripts/template_script_DESeq2_CL.r'),
-        project_id = config['project_id'],
-        condition = model['condition'],
-        ref_level = model['ref_level']
+        args = get_params
     singularity:
        'docker://flatberg/sartools:1.6.6'
+    output:
+        'data/processed/rnaseq/sartools/{model_name}/{model_name}_report.html'
     shell:
         'Rscript {params.script} '
-        '--output data/processed/rnaseq/sartools '
-        '--projectName {params.project_id} '
-        '--author "Arnar Flatberg" '
+        '--projectName {wildcards.model_name} '
         '--targetFile {input.target} '
         '--countsFile {input.counts} '
-        '--varInt {params.condition} '
-        '--condRef {params.ref_level} '
-        '--colors "#3778bf,#feb308,#7bb274,#d9544d"'
+        '{params.args} '
         
 rule sartools_edger:
     input:

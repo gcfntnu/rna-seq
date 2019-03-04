@@ -148,12 +148,14 @@ colors <- unlist(strsplit(opt$cols, ","))            # vector of colors of each 
 forceCairoGraph <- opt$forceCairoGraph				 # force cairo as plotting device if enabled
 
 if (!is.null(opt$subset)){
-    subset <- unlist(strsplit(opt$FTR, ","))
+    subset <- unlist(strsplit(opt$subset, ","))
 } else{
     subset <- opt$subset
 }
 
-# print(paste("workDir", workDir))
+print(paste("workDir", workDir))
+print(paste("subset", subset))
+
 # print(paste("projectName", projectName))
 # print(paste("author", author))
 # print(paste("targetFile", targetFile))
@@ -186,14 +188,44 @@ problem <- checkParameters.DESeq2(projectName=projectName,author=author,targetFi
                        typeTrans=typeTrans,locfunc=locfunc,colors=colors)
 if (problem) quit(save="yes")
 					   
-# loading target file
-target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, batch=batch)
-
-if (!is.null(subset)){
-    target <- target[subset,]
-    factor_cols <- vapply(target, is.factor, logical(1))
-    target[factor_cols] <- lapply(target[factor_cols], factor)
+## loading target file
+## update original func to accept subset as argument
+loadTargetFile <- function(targetFile, varInt, condRef, batch, subset=NULL){
+    target <- read.table(targetFile, header=TRUE, sep="\t", na.strings="")
+    rownames(target) <- as.character(target[,1])
+    if (!is.null(subset)){
+        target <- target[subset,]
+        factor_cols <- vapply(target, is.factor, logical(1))
+        target[factor_cols] <- lapply(target[factor_cols], factor)
+    } 
+    if (!I(varInt %in% names(target))) stop(paste("The factor of interest", varInt, "is not in the target file"))
+    if (!is.null(batch)){
+        if (!I(batch %in% names(target))){
+            stop(paste("The batch effect", batch, "is not in the target file"))
+        } else{
+            target[,batch] <- as.factor(target[,batch])
+        }
+    }
+    target[,varInt] <- as.factor(target[,varInt])
+    if (!I(condRef %in% as.character(target[,varInt]))) stop(paste("The reference level", condRef, "is not a level of the factor of interest"))
+    target[,varInt] <- relevel(target[,varInt],ref=condRef)
+    ##target <- target[order(target[,varInt]),]
+    rownames(target) <- as.character(target[,1])
+    ## check if varInt contains replicates
+    if (min(table(target[,varInt]))<2){
+        stop(paste("The factor of interest", varInt, "has a level without replicates"))
+    }
+    ## check if NA in the target
+    if (any(is.na(cbind(target[,c(varInt, batch)], target[,1:2])))) stop("NA are present in the target file")
+    ## warning message if batch is numeric
+    ##if (!is.null(batch) && is.numeric(target[,batch])) warning(paste("The", batch, "variable is numeric. Use factor() or rename the levels with letters to convert it into a factor"))
+    ##if (any(grepl("[[:punct:]]", as.character(target[,varInt])))) stop(paste("The", varInt, "variable contains punctuation characters, please remove them"))
+    cat("Target file:\n")
+    print(target)
+    return(target)
 }
+
+target <- loadTargetFile(targetFile=targetFile, varInt=varInt, condRef=condRef, batch=batch, subset=subset)
 
 
 # loading counts
