@@ -1,13 +1,27 @@
+#-*- mode: snakemake -*-
+"""SARTools: A DESeq2- and EdgeR-Based R Pipeline for Comprehensive Differential Analysis of RNA-Seq Data
+
+https://github.com/PF2-pasteur-fr/SARTools
+"""
+
+if 'models' in config['analysis']:
+    model = config['analysis']['models']['sartools']
+    
+if os.path.exists('sartools_config.yaml'):
+    model_fn = srcdir('sartools_config.yaml')
+    model = yaml.load(open(model_fn))
+
+print(model)
 
 rule sartools_deseq2:
     input:
-        target = 'data/processed/sample_info2.csv',
+        target = 'data/processed/sample_info.tsv',
         counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
     params:
         script = srcdir('scripts/template_script_DESeq2_CL.r'),
         project_id = config['project_id'],
-        condition = 'Sample_Group',
-        ref_level = 'Hc'
+        condition = model['condition'],
+        ref_level = model['ref_level']
     singularity:
        'docker://flatberg/sartools:1.6.6'
     shell:
