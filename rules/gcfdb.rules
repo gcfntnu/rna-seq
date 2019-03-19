@@ -1,5 +1,5 @@
 #-*- mode:snakemake -*-
-extra_conf_fn = srcdir('db.config')
+extra_conf_fn = srcdir('gcfdb.config')
 if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
         c  = yaml.load(fh) or {}
@@ -14,8 +14,8 @@ if not config.get('ref_dir'):
             'db/gencode.db'
 
 include:
-    'db/spikein.db'
+    'gcfdb/spikein.db'
 include:
-    'db/contaminants.db'
+    'gcfdb/contaminants.db'
 include:
-    'db/rrna.db'
+    'gcfdb/rrna.db'
