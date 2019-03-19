@@ -77,7 +77,7 @@ if SAMPLES:
     SAMPLES = list(SAMPLES.keys())
 
 include:
-    'rules/db.rules'
+    'rules/gcfdb.rules'
 include:
     'rules/filter.rules'
 include:
