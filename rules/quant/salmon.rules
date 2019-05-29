@@ -47,6 +47,8 @@ def get_fragment_sd(wildcards):
     val = config['samples'][wildcards.sample].get('Fragment_SD', 20)
     if val == 'NA':
         val = 20
+    if int(val) < 20:
+        val = 20
     return val
     
 def sample_args(wildcards):
@@ -67,6 +69,7 @@ def sample_args(wildcards):
         args += '--fldSD {} '.format(get_fragment_sd(wildcards))
     return args
 
+
 rule salmon_transcriptome_index:
     input:
         transcriptome = join(REF_DIR, 'fasta', 'transcriptome.fa')
@@ -77,6 +80,8 @@ rule salmon_transcriptome_index:
         join(REF_DIR, 'salmon', 'refInfo.json')
     threads:
         24
+    singularity:
+        'docker://combinelab/salmon:0.13.1'
     shell:
         'salmon index '
         '{params.args} '
@@ -97,8 +102,8 @@ rule salmon_map:
         sample_args = sample_args
     threads:
         24
-    conda:
-        'envs/quant.yaml'
+    singularity:
+        'docker://combinelab/salmon:0.13.1'
     output:
         quant = join(SALMON_INTERIM, '{sample}', 'quant.sf'),
         meta_log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json'),
@@ -133,8 +138,6 @@ rule salmon_quant:
         transcript_tpm = join(SALMON_OUT, 'transcripts.tpm'),
         transcript_info = join(SALMON_OUT, 'transcript_info.tsv'),
         transcript_length = join(SALMON_OUT, 'transcripts.length')
-    conda:
-        'envs/quant.yaml'
     shell:
         'Rscript {params.script} '
         '--type salmon '
