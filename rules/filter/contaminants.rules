@@ -158,12 +158,11 @@ rule contaminants_filter_se_bbduk:
     shell:
         'bbduk.sh in={input.R1} overwrite=true outu={output.R1} threads={threads} rcomp=f k=21 stats={output.counts} ref={input.ref} 2>{log}'
 
-
-rule contaminants_filter_se_skip:
+        
+rule contaminants_filter_skip:
     input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', config['filter']['spikein']['quantifier'], '{sample}_R1.fastq')
+        join(FILTER_INTERIM, '{merge}', 'spikein', config['filter']['spikein']['quantifier'], '{sample}_R{read_num}.fastq')
     output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', 'skip', '{sample}_R1.fastq')
+        join(FILTER_INTERIM, '{merge}', 'contaminants', 'skip', '{sample}_R{read_num}.fastq')
     shell:
         'ln -sr {input} {output}'
-        

@@ -188,10 +188,10 @@ rule rrna_filter_se_sortmerna:
         '--ref {params.ref} '
         '{params.args} '
 
-rule rrna_skip_se:
+rule rrna_skip:
     input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', config['filter']['contaminants']['quantifier'], '{sample}_R1.fastq')
+        R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', config['filter']['contaminants']['quantifier'], '{sample}_R{readnum}.fastq')
     output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'skip', '{sample}_R1.fastq')
+        R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'skip', '{sample}_R{readnum}.fastq')
     shell:
         'ln -sr {input} {output}'

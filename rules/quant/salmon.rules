@@ -119,8 +119,8 @@ rule salmon_map:
 rule salmon_quant:
     input:
         files = expand(rules.salmon_map.output.quant, sample=SAMPLES),
-        txinfo = join(REF_DIR, 'genes', 'transcripts.csv'),
-        ginfo = join(REF_DIR, 'genes', 'genes.csv')
+        txinfo = join(REF_DIR, 'genes', 'transcripts.tsv'),
+        ginfo = join(REF_DIR, 'genes', 'genes.tsv')
     params:
         output = SALMON_OUT,
         script = srcdir('scripts/transcript_quant.R')

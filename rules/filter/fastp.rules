@@ -4,6 +4,7 @@ ADAPTER = config.get('adapter') or LIBPREP['single_end'].get('adapter')
 ADAPTER2 = config.get('adapter2') or LIBPREP['paired_end'].get('adapter2')
 PE = len(config['read_geometry']) > 1
 
+
 rule fastp_interleave_fastq:
     input:
         unpack(get_raw_fastq)
@@ -17,10 +18,10 @@ rule fastp_interleave_fastq:
 if PE:
     rule fastp_join:
         input:
-            join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq.gz')
+            rules.fastp_interleave_fastq.output
         output:
             R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp' '{sample}_R2.fastq')
+            R2 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R2.fastq')
         threads:
             3
         params:
@@ -40,7 +41,7 @@ if PE:
             unpack(get_raw_fastq)
         output:
             R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp' '{sample}_R2.fastq')
+            R2 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R2.fastq')
         params:
             args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
             adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',

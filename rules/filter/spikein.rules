@@ -143,10 +143,10 @@ rule spikein_filter_se_bbduk:
     shell:
         'bbduk.sh in={input.R1} overwrite=true outu={output.R1} threads={threads} rcomp=f k=21 stats={output.counts} ref={input.ref} 2>{log}'
 
-rule spikein_filter_se_skip:
+rule spikein_filter_skip:
     input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', config['filter']['trim']['trimmer'], '{sample}_R1.fastq')
+        R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', 'fastp', '{sample}_R{readnum}.fastq')
     output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R1.fastq')
+        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R{readnum}.fastq')
     shell:
         'ln -sr {input} {output}'
