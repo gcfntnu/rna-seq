@@ -28,7 +28,7 @@ def featurecounts_paired_end(wildcards, **kw):
 
 rule featurecounts:
     input:
-        bam = get_namesorted_bam,
+        bam = rules.namesorted_bam.output,
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
     params:
         strand = featurecounts_strand,

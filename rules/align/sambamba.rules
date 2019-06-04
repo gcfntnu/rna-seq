@@ -11,42 +11,19 @@ bioconda
 FIXME:
 Compare picardtools rmdup vs sambamba version vs STAR
 """
-_STAR_INTERIM = join(config.get('tmp_dir', 'data/tmp'), 'STAR')
 
-rule mark_duplicates:
+rule sambamba_mark_duplicates:
     input:
         bam = rules.star.output.bam,
         shared_mem = rules.clean_sharedmem_2pass.output
     output:
-        bam = join(_STAR_INTERIM, '{sample}.sorted.bam')
+        bam = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam'),
+        bai = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam.bai'),
     threads:
         2
-    benchmark:
-        'timings/{sample}.sambamba.markdup.time'
+    singularity:
+        'docker://quay.io/biocontainers/sambamba:0.7.0--h89e63da_0'
     shell:
-        'sambamba markdup -t {threads} {input.bam} {output.bam} '
+        'sambamba markdup -t {threads} {input.bam} {output.bam} ; sambamba index -t {threads} {output.bam}'
 
-rule index_bam:
-    input:
-        rules.mark_duplicates.output.bam
-    output:
-        bai = join(_STAR_INTERIM, '{sample}.sorted.bam.bai')
-    threads:
-        1
-    benchmark:
-        'timings/{sample}.sambamba.index.time'
-    shell:
-        'sambamba index -t {threads} {input} '
-           
-rule namesort_bam:
-    input:
-       rules.mark_duplicates.output.bam,
-       rules.index_bam.output
-    output:
-        join(_STAR_INTERIM, '{sample}.namesorted.bam')
-    threads:
-        4
-    benchmark:
-        'timings/{sample}.sambamba.namesort.time'
-    shell:
-        'sambamba sort -N -p -m 24G -t {threads} -o {output} {input}'
+

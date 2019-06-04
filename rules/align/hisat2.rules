@@ -1,6 +1,5 @@
 #-*- mode: snakemake -*-
 """
-
 Snakemake rules for aligning rna-seq fastq files to genome using the
 HISAT2 aligner.
 """
@@ -27,7 +26,7 @@ def hisat2_input(wildcards):
         input += ' -2 ' + ','.join(R2)
     return input
 
-rule hisat2_index:
+rule hisat2_genome_index:
     input:
         genome = join(REF_DIR, 'fasta', 'genome.fa')
     params:
@@ -36,11 +35,11 @@ rule hisat2_index:
     output:
          join(REF_DIR, 'hisat2', 'hisat2.1.ht2')
     threads:
-        24
+        48
     log:
         join(REF_DIR, 'logs', 'HISAT2.index.log')
     singularity:
-        'docker://gcfntnu/ensembl:0.1' 
+        'docker://quay.io/biocontainers/hisat2:2.1.0--py36h2d50403_1'
     shell:
         'hisat2-build '
         '-f '
@@ -51,15 +50,17 @@ rule hisat2_index:
 rule hisat2_align:
     input:
         unpack(get_processed_fastq),
-        index = rules.hisat2_index.output
+        index = rules.hisat2_genome_index.output
     params:
         input = hisat2_input,
-        index = rules.hisat2_index.params.prefix,
+        index = rules.hisat2_genome_index.params.prefix,
         unaligned = join(HISAT_INTERIM, '{sample}.unaligned.fastq.gz')
     output:
-        sam = temp(join(HISAT_INTERIM, '{sample}.out.sam')) 
+        sam = pipe(join(HISAT_INTERIM, '{sample}.out.sam')) 
     threads:
-        16
+        48
+    singularity:
+        'docker://quay.io/biocontainers/hisat2:2.1.0--py36h2d50403_1'
     shell:
         'hisat2 '
         '-p {threads} '
@@ -68,12 +69,12 @@ rule hisat2_align:
         '{params.input} '
         '-S {output.sam}'
 
-rule hisat2_bam:
+rule hisat2_sorted_bam:
     input:
         sam = rules.hisat2_align.output.sam
     output:
         bam = temp(join(ALIGN_INTERIM, 'hisat2', '{sample}.Aligned.sortedByCoord.out.bam'))
     threads:
-        4
+        8
     shell:
-         'sambamba view -S -f bam {input.sam} | sambamba sort -t {threads} -o {output.bam} /dev/stdin '
+         'cat {input.sam} | sambamba view -S -f bam /dev/stdin | sambamba sort -m 24G -t {threads} -o {output.bam} /dev/stdin '
