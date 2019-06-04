@@ -106,6 +106,7 @@ rule salmon_map:
         'docker://combinelab/salmon:0.13.1'
     output:
         quant = join(SALMON_INTERIM, '{sample}', 'quant.sf'),
+        unmapped = join(SALMON_INTERIM, '{sample}', 'unmapped.sam'),
         meta_log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json'),
         dist_log = join(SALMON_INTERIM, '{sample}', 'libParams', 'flenDist.txt')
     shell:
@@ -117,7 +118,11 @@ rule salmon_map:
         '--numBootstraps {params.nboot} '
         '--writeUnmappedNames '
         '--validateMappings '
+        '--rangeFactorizationBins 4 '
         '--seqBias '
+        '--gcBias '
+        '--writeUnmappedNames '
+        '--writeMappings={output.unmapped} '
         '-o {params.output} '
         '{params.sample_args} '
 
