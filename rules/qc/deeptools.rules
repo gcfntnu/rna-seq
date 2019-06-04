@@ -1,10 +1,81 @@
 #-*- mode:snakemake -*-
-extra_conf_fn = srcdir('deeptools.config')
-if os.path.exists(extra_conf_fn):
-    with open(extra_conf_fn) as fh:
-        c  = yaml.load(fh) or {}
-        update_config2(config, c)
+"""
+"""
 
-ORG = config.get('organism', 'homo_sapiens')
 
 EFFECTIVE_GENOMESIZE = {''}
+
+rule qc_bam_deeptools_bamcov:
+    input:
+        bam = get_sorted_bam
+    output:
+        'data/tmp/rnaseq/deeptols/{sample}.bw'
+    singularity:
+        'docker://quay.io/biocontainers/deeptools:3.3.0--py_0'
+    threads:
+        8
+    shell:
+        'bamCoverage '
+        '-b {input.bam} '
+        '--filterRNAstrand reverse '
+        '--normalizeUsing BPM ' 
+        '-p {threads} '
+        '-o {output}'
+
+rule qc_bam_deeptools_multibw_summary:
+    input:
+        bam_files = expand(rules.qc_bam_deeptools_bamcov.output, sample=SAMPLES),
+        bed = 'data/ext/ensembl/homo_sapiens/GRCh38/genes/genes.bed12'
+    output:
+        'data/tmp/rnaseq/deeptols/multi_bigwig.npz'
+    singularity:
+        'docker://quay.io/biocontainers/deeptools:3.3.0--py_0'
+    threads:
+        16
+    shell:
+        'multiBigwigSummary BED-file '
+        '--bwfiles {input.bam_files} '
+        '--BED {input.bed} '
+        '--smartLabels --metagene '
+        '--numberOfProcessors {threads} '
+        '--outFileName {output} '
+
+
+def dt_get_labels(bw, sample_info):
+    import pandas as pd
+    import numpy as np
+    tab = pd.read_csv(sample_info, sep='\t', index_col=0)
+    tab.index = [str(i) for i in tab.index]
+    bw_labels = np.load(bw[0])['labels'].tolist()
+    tab = tab.loc[bw_labels,:]
+    return list(tab['Sample_Group'])
+
+def dt_get_colors(bw, sample_info, col='Sample_Group'):
+    import pandas as pd
+    import numpy as np
+    tab = pd.read_csv(sample_info, sep='\t', index_col=0)
+    tab.index = [str(i) for i in tab.index]
+    bw_labels = np.load(bw[0])['labels'].tolist()
+    tab = tab.loc[bw_labels,]
+    t = tab[col]
+    return t
+
+rule qc_bam_deeptools_bamcov_pca:
+    input:
+        bw = rules.qc_bam_deeptools_multibw_summary.output,
+        sample_info = 'data/processed/sample_info.tsv'
+    params:
+        samples = lambda wildcards, input : dt_get_labels(input.bw, input.sample_info),
+        args = '--transpose --log2 '
+    output:
+        png = 'data/tmp/rnaseq/deeptols/multi_bigwig_pca.png',
+        tsv = 'data/tmp/rnaseq/deeptols/multi_bigwig_pca.tsv'
+    singularity:
+        'docker://quay.io/biocontainers/deeptools:3.3.0--py_0'
+    shell:
+        'plotPCA '
+        '--labels {params.samples} '
+        '--outFileName {output.tsv} '
+        '--corData {input.bw} '
+        '--plotFile {output.png} '
+        '{params.args} '

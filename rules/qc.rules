@@ -19,15 +19,17 @@ include:
     'qc/fastqc.rules'
 include:
     'qc/preseq.rules'
+include:
+    'qc/qort.rules'
+include:
+    'qc/deeptools.rules'
 
 rule qc_bam:
     input:
        expand('logs/{sample}/{sample}.readdist.txt', sample=SAMPLES),
        expand('logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.sorted_fastqc.zip', sample=SAMPLES),
        expand('logs/{sample}/{sample}.ccurve.txt', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES),
-       
+       expand('logs/{sample}/QC.summary.txt', sample=SAMPLES)
        
 include:
     'qc/multiqc.rules'
