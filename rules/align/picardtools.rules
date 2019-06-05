@@ -6,7 +6,7 @@ Picard tools, https://broadinstitute.github.io/picard/
 """
 
 def optical_dup_args(*args, **kw):
-    args = ''
+    args = 'TAGGING_POLICY=All '
     machine = config.get('machine', 'nextseq500')
     if machine == 'nextseq500':
         args += 'OPTICAL_DUPLICATE_PIXEL_DISTANCE=100 '
@@ -22,7 +22,7 @@ rule picard_mark_duplicates:
         shared_mem = rules.star_clean_memory.output        
     output:
         bam = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam'),
-        bai = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam.bai'),
+        bai = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bai'),
         metrics = 'logs/{sample}/{sample}.rmdup.metrics'
     log:
         'logs/{sample}/{sample}.picard.rmdup.log'
@@ -35,7 +35,7 @@ rule picard_mark_duplicates:
         'docker://gcfntnu/picard:2.18'
     shell:
         'picard MarkDuplicates '
-        'INPUT={input} '
+        'INPUT={input.bam} '
         'OUTPUT={output.bam} '
         'METRICS_FILE={output.metrics} '
         'VALIDATION_STRINGENCY=SILENT '

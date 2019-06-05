@@ -116,7 +116,6 @@ rule salmon_map:
         '-g {input.gtf} '
         '-p {threads} '
         '--numBootstraps {params.nboot} '
-        '--writeUnmappedNames '
         '--validateMappings '
         '--rangeFactorizationBins 4 '
         '--seqBias '
