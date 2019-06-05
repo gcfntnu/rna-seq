@@ -119,7 +119,6 @@ rule salmon_map:
         '--validateMappings '
         '--rangeFactorizationBins 4 '
         '--seqBias '
-        '--gcBias '
         '--writeUnmappedNames '
         '--writeMappings={output.unmapped} '
         '-o {params.output} '

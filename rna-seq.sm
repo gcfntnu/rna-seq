@@ -80,10 +80,8 @@ if kit.startswith('Lexogen'):
             read_geometry[0] -= 7
         config['read_geometry'] = read_geometry
 
-SAMPLES = config.get('samples', [])
-    
-if SAMPLES:
-    SAMPLES = list(SAMPLES.keys())
+if not 'SAMPLES' in locals():
+    SAMPLES = list(config.get('samples', {}).keys())
 
 include:
     'rules/gcfdb.rules'
