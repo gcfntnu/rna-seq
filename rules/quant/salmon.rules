@@ -69,7 +69,6 @@ def sample_args(wildcards):
         args += '--fldSD {} '.format(get_fragment_sd(wildcards))
     return args
 
-
 rule salmon_transcriptome_index:
     input:
         transcriptome = join(REF_DIR, 'fasta', 'transcriptome.fa')
@@ -123,7 +122,38 @@ rule salmon_map:
         '--writeMappings={output.unmapped} '
         '-o {params.output} '
         '{params.sample_args} '
+        
+def unmapped_sample_args(wildcards):
+    """Sample specific args for unmapped reads.
+    """
+    args = ''
+    sample = config['samples'][wildcards.sample]
+    PE = sample.get('paired_end') or len(config['read_geometry']) > 1
+    fastq = get_processed_fastq(wildcards)
+    salmon_r1 = ' '.join(fastq['R1'])
+    if PE:
+        salmon_r2 = ' '.join(fastq['R2'])
+        args += ' -1 {} -2 {} '.format(salmon_r1, salmon_r2)
+    else:
+        args += ' -r {} '.format(salmon_r1)
+    return args
 
+rule salmon_unmapped_fastq:
+    input:
+        unpack(get_processed_fastq),
+        unmapped = join(SALMON_INTERIM, '{sample}', 'unmapped.sam')
+    params:
+        args = unmapped_sample_args,
+        prefix = join(SALMON_INTERIM, '{sample}', 'unmapped')
+    singularity:
+        'docker://flatberg/salmon:0.14'
+    output:
+        join(SALMON_INTERIM, '{sample}', 'unmapped_1.fa.gz')
+    shell:
+        'salmontools extract-unmapped '
+        '{params.args} '
+        '-o {params.prefix} '
+        
 rule salmon_quant:
     input:
         files = expand(rules.salmon_map.output.quant, sample=SAMPLES),
