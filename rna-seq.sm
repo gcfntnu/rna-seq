@@ -19,7 +19,9 @@ import yaml
 
 from snakemake.workflow import srcdir
 from snakemake.logging import logger
-from snakemake.utils import update_config
+from snakemake.utils import update_config, min_version
+
+min_version("5.1.2")
 
 def update_config2(config, extra_config):
     """Recursively update dictionary config with overwrite_config.
@@ -65,6 +67,7 @@ if os.path.exists(extra_conf_fn):
         # original config will override extra config on shared items
         update_config2(config, c)
 
+# library preparation kit specific configuration
 libprep_fn = srcdir('libprep.config')
 with open(libprep_fn) as fh:
     LIBPREP_CONF  = yaml.load(fh) or {}
@@ -80,6 +83,13 @@ if kit.startswith('Lexogen'):
             read_geometry[0] -= 8
         config['read_geometry'] = read_geometry
 
+# load function for statistical models
+def load_model(model_yaml_file):
+    with open(model_yaml_file) as fh:
+        MODELS  = yaml.load(fh) or {}
+        config['models'] = MODELS
+        config['model_names'] = list(MODELS.keys())
+        
 if not 'SAMPLES' in locals():
     SAMPLES = list(config.get('samples', {}).keys())
 

@@ -32,6 +32,9 @@ rule multiqc_config:
         if config['organism'] == 'homo_sapiens':
             conf['fastqc_config'] = {'fastqc_theoretical_gc': 'hg38_txome'}
 
+        preseq = {'genome_size': 'hg38_genome', 'read_length': 75, 'x_axis': 'counts', 'y_axis': 'coverage'}
+        conf['preseq'] = preseq
+        
         with open(output[0], 'w') as fh:
             yaml.dump(conf, fh, default_flow_style=False)
     
@@ -45,9 +48,12 @@ rule multiqc_summary:
         'docker://gcfntnu/multiqc:dev-py27'
     params:
         picard = expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES),
-        STAR = expand('logs/{sample}/Log.final.out', sample=SAMPLES)
+        STAR = expand('logs/{sample}/Log.final.out', sample=SAMPLES),
+        STAR2 = expand('logs/{sample}/{sample}.Log.final.out', sample=SAMPLES),
+        all = 'logs'
+        
         #fastp = expand('logs/{sample}/*.fastp.json', sample=SAMPLES)
     output:
         rules.multiqc_config.params.html
     shell:
-        'multiqc -f -c {input.config} {params.STAR} {input.salmon} {input.salmon2} {input.qc_bam} '
+        'multiqc -f -c {input.config} {params.STAR} {input.salmon} {input.salmon2} {input.qc_bam} {params.all}'

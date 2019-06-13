@@ -3,6 +3,8 @@
 
 https://github.com/PF2-pasteur-fr/SARTools
 """
+import warnings
+import glob
 
 def get_params(wildcards, input, output):
     model = config['models'].get(wildcards.model_name)
@@ -41,7 +43,7 @@ def get_params(wildcards, input, output):
     
     return params_str
         
-rule sartools_deseq2:
+rule sartools_deseq2_run:
     input:
         target = 'data/processed/sample_info.tsv',
         counts = 'data/processed/rnaseq/quant/salmon/genes.quant',
@@ -61,7 +63,7 @@ rule sartools_deseq2:
         '--metaFile {input.meta} '
         '{params.args} '
         
-rule sartools_edger:
+rule sartools_edger_run:
     input:
         target = 'data/processed/sample_info.tsv',
         counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
@@ -81,3 +83,25 @@ rule sartools_edger:
         '--countsFile {input.counts} '
         '--varInt {params.condition} '
         '--condRef {params.ref_level} '
+
+
+rule sartools_deseq2:
+     input:
+         'data/processed/rnaseq/sartools/{model_name}/{model_name}_report.html'
+     output:
+         directory('data/processed/rnaseq/sartools/{model_name}/tables/excel_format')
+     run:
+         import pandas as pd
+         warnings.warn("INPUT {}".format(str(input)))
+         filenames = glob.glob(os.path.join(os.path.split(input[0])[0], 'tables', '*.txt')) 
+         for fn in filenames:
+             warnings.warn("INPUT file: {}".format(fn))
+             if fn.endswith('.html'):
+                 continue
+             df = pd.read_csv(fn, sep='\t', index_col=0)
+             pth, bn = os.path.split(fn)
+             excel_bn = os.path.splitext(bn)[0] + '.xlsx'
+             if not os.path.exists(join(pth, 'excel_format')):
+                 os.makedirs(join(pth, 'excel_format'))
+             out = join(pth, 'excel_format', excel_bn)
+             df.to_excel(out, index_label='ID', freeze_panes=[1,4])
