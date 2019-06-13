@@ -65,9 +65,10 @@ rule qc_bam_rseqc_tin:
     singularity:
         'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
     output:
-        'logs/{sample}/{sample}.tin.txt'
+        'logs/{sample}/{sample}.tin.xls',
+        'logs/{sample}/{sample}.summary.txt'
     shell:
-        'tin.py -i {input.bam} -r {input.bed} > {output}'       
+        'tin.py -i {input.bam} -r {input.bed} && mv '       
 
        
         

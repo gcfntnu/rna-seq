@@ -27,7 +27,7 @@ rule qc_bam_picard_rnametrics:
     output:
         metrics = 'logs/{sample}/{sample}.rnaseq.metrics'
     params:
-        java_opt="-Xms2g -Xmx16g"
+        java_opt="-Xms4g -Xmx4g"
     threads:
         4
     singularity:

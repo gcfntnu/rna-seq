@@ -12,7 +12,7 @@ rule qc_bam_qort:
     params:
         java_opt = '-Xms4G -Xmx4G',
         se = '--singleEnded' if len(config['read_geometry']) == 1 else '',
-        max_len = '--maxReadLength {}'.format(int(config['read_geometry'][0]) -10 ),
+        max_len = '--maxReadLength {}'.format(int(config['read_geometry'][0])),
         stranded = '--stranded',
         read_strand = '--fr_secondStrand ' if LIBPREP['strand'] == 'forward' else '',
         outdir = 'logs/{sample}'

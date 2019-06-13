@@ -14,7 +14,8 @@ def get_params(wildcards, input, output):
         logger.error('Model description needs a `ref_level` definition')
         sys.exit()
     author = model.get('author', 'Arnar Flatberg')
-    colors = model.get('colors', '#3778bf,#feb308,#7bb274,#d9544d')
+    colors = model.get('colors', '#1f77b4,#ff7f0e,#2ca02c,#d62728,#9467bd,#8c564b,#e377c2,#7f7f7f,#bcbd22,#17becf'
+)
     subset = model.get('subset')
     batch = model.get('batch')
     alpha = model.get('alpha')
@@ -43,7 +44,8 @@ def get_params(wildcards, input, output):
 rule sartools_deseq2:
     input:
         target = 'data/processed/sample_info.tsv',
-        counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
+        counts = 'data/processed/rnaseq/quant/salmon/genes.quant',
+        meta = join(REF_DIR, 'genes', 'genes.tsv')
     params:
         script = srcdir('scripts/template_script_DESeq2_CL.r'),
         args = get_params
@@ -56,6 +58,7 @@ rule sartools_deseq2:
         '--projectName {wildcards.model_name} '
         '--targetFile {input.target} '
         '--countsFile {input.counts} '
+        '--metaFile {input.meta} '
         '{params.args} '
         
 rule sartools_edger:
