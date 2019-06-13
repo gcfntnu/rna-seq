@@ -28,14 +28,15 @@ rule picard_mark_duplicates:
     log:
         'logs/{sample}/{sample}.picard.rmdup.log'
     params:
-        java_opt="-Xms2g -Xmx32g -XX:MaxPermSize=2g",
+        java_opt="-Xms8g -Xmx8g -XX:MaxPermSize=2g",
         dup_args = optical_dup_args()
     threads:
-        2
+        4
     singularity:
         'docker://gcfntnu/picard:2.18'
     shell:
         'picard MarkDuplicates '
+        '{params.java_opt} '
         'INPUT={input.bam} '
         'OUTPUT={output.bam} '
         'METRICS_FILE={output.metrics} '
@@ -44,5 +45,5 @@ rule picard_mark_duplicates:
         'CREATE_INDEX=TRUE '
         'CREATE_MD5_FILE=TRUE '
         '{params.dup_args}'
-        '&& ln -rs {output.bai} {output.bai2}'
+        '&& ln -rs {output.bai} {output.bai2} '
         
