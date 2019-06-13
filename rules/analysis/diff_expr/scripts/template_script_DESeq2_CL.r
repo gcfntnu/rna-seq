@@ -191,7 +191,7 @@ if (problem) quit(save="yes")
 ## loading target file
 ## update original func to accept subset as argument
 loadTargetFile <- function(targetFile, varInt, condRef, batch, subset=NULL){
-    target <- read.table(targetFile, header=TRUE, sep="\t", na.strings="")
+    target <- read.table(targetFile, header=TRUE, sep="\t", na.strings="", check.names=FALSE)
     rownames(target) <- as.character(target[,1])
     if (!is.null(subset)){
         target <- target[subset,]

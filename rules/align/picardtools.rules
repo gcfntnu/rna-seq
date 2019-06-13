@@ -21,8 +21,9 @@ rule picard_mark_duplicates:
         bam = rules.star_align.output.bam,
         shared_mem = rules.star_clean_memory.output        
     output:
-        bam = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam'),
-        bai = join(ALIGN_INTERIM, 'star', '{sample}.sorted.bai'),
+        bam = join(ALIGN_INTERIM, config.get('align', {}).get('method', 'star'), '{sample}.sorted.bam'),
+        bai = join(ALIGN_INTERIM, config.get('align', {}).get('method', 'star'), '{sample}.sorted.bai'),
+        bai2 = join(ALIGN_INTERIM, config.get('align', {}).get('method', 'star'), '{sample}.sorted.bam.bai'),
         metrics = 'logs/{sample}/{sample}.rmdup.metrics'
     log:
         'logs/{sample}/{sample}.picard.rmdup.log'
@@ -43,5 +44,5 @@ rule picard_mark_duplicates:
         'CREATE_INDEX=TRUE '
         'CREATE_MD5_FILE=TRUE '
         '{params.dup_args}'
-        '2> {log} '
+        '&& ln -rs {output.bai} {output.bai2}'
         
