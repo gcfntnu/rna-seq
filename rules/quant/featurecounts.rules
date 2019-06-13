@@ -58,7 +58,7 @@ rule featurecounts:
 rule featurecounts_quant:
     input:
         counts = expand(rules.featurecounts.output.counts, sample=SAMPLES),
-        gene_info = join(REF_DIR, 'genes', 'genes.csv')
+        gene_info = join(REF_DIR, 'genes', 'genes.tsv')
     params:
         output = join(FC_PROCESSED, 'featurecounts'),
         script = srcdir('scripts/gene_quant.R')

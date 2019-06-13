@@ -161,7 +161,7 @@ if config['align']['star']['twopass']:
         threads:
             24
         log:
-            'logs/{sample}/Log.final.out'
+            'logs/{sample}/{sample}.Log.final.out'
         shadow:
             'shallow'
         singularity:
@@ -195,7 +195,7 @@ else:
         threads:
             24
         log:
-            'logs/{sample}/Log.final.out'
+            'logs/{sample}/{sample}.Log.final.out'
         shadow:
             'shallow'
         singularity:

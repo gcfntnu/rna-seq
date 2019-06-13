@@ -75,9 +75,9 @@ if kit.startswith('Lexogen'):
     read_geometry = config.get('read_geometry')
     if read_geometry:
         read_geometry = [int(i) for i in read_geometry]
-        read_geometry[0] -= 10
+        read_geometry[0] -= 11
         if len(read_geometry) > 1:
-            read_geometry[0] -= 7
+            read_geometry[0] -= 8
         config['read_geometry'] = read_geometry
 
 if not 'SAMPLES' in locals():

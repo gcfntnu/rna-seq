@@ -27,10 +27,10 @@ rule picard_mark_duplicates:
     log:
         'logs/{sample}/{sample}.picard.rmdup.log'
     params:
-        java_opt="-Xms8g -Xmx8g -XX:MaxPermSize=2g",
+        java_opt="-Xms4g -Xmx4g ",
         dup_args = optical_dup_args()
     threads:
-        4
+        8
     singularity:
         'docker://gcfntnu/picard:2.18'
     shell:
