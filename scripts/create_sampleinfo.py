@@ -4,6 +4,15 @@ import yaml
 import pandas as pd
 
 
+def col_is_empty(col):
+    if all(col==''):
+        return True
+    if col.isna().all():
+        return True
+    if col.isnull().all():
+        return True
+    return False
+
 if __name__ == '__main__':
     with open(sys.argv[1]) as fh:
         c = yaml.load(fh)
@@ -16,6 +25,8 @@ if __name__ == '__main__':
     cols.pop(cols.index('Sample_ID'))
     cols.insert(0, 'Sample_ID')
     df = df.loc[:,cols]
+    empty = df.apply(col_is_empty, axis=0) # rm empty cols
+    df = df.loc[:,empty==False]   
     df.to_csv(sys.stdout, sep='\t', index=False)
     
         

@@ -24,7 +24,7 @@ def get_params(wildcards, input, output):
     independent_filtering = bool(model.get('independent_filtering', True)) 
     output_dir = os.path.dirname(output[0])
 
-    params_str = '--varInt {} --condRef {} --output {} '.format(condition, ref_level, output_dir)
+    params_str = '--varInt {} --condRef "{}" --output {} '.format(condition, ref_level, output_dir)
     if author:
         params_str += '--author "{}" '.format(author)
     if colors:

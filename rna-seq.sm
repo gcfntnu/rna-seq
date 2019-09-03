@@ -109,7 +109,7 @@ rule sample_info:
     output:
         'data/processed/sample_info.tsv'
     singularity:
-        'docker://fastgenomics/pandas:0.22-p36-v3'
+        'docker://gcfntnu/python-base:3.7'
     params:
         script = srcdir('scripts/create_sampleinfo.py')
     shell:
