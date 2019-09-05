@@ -48,8 +48,7 @@ rule multiqc_summary:
         'docker://gcfntnu/multiqc:dev-py27'
     params:
         picard = expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES),
-        STAR = expand('logs/{sample}/Log.final.out', sample=SAMPLES),
-        STAR2 = expand('logs/{sample}/{sample}.Log.final.out', sample=SAMPLES),
+        STAR = expand('logs/{sample}/{sample}.Log.final.out', sample=SAMPLES),
         all = 'logs'
         
         #fastp = expand('logs/{sample}/*.fastp.json', sample=SAMPLES)
