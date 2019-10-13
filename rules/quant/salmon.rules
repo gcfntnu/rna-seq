@@ -153,6 +153,14 @@ rule salmon_unmapped_fastq:
         'salmontools extract-unmapped '
         '{params.args} '
         '-o {params.prefix} '
+
+rule salmon_tximport:
+    input:
+        files = expand(rules.salmon_map.output.quant, sample=SAMPLES),
+        txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')
+    output:
+        join(SALMON_INTERIM, 'tximport', 'tximport.rds')
+    shell:
         
 rule salmon_quant:
     input:
