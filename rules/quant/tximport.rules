@@ -1,18 +1,3 @@
-rule tximport_rds:
-    input:
-        files = expand(join(QUANT_INTERIM, '{quant}', '{sample}', 'quant.sf'), sample=SAMPLES),
-        txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')
-    params:
-        script = srcdir('scripts/tximport.R')
-    singularity:
-        'docker://gcfntnu/tximport:1.12.3'
-    output:
-        rds = join(QUANT_INTERIM, '{quant}', 'tximport', 'tximport_{quant}.rds')
-    shell:
-        'Rscript {params.script} {input.files} '
-        '--txinfo {input.txinfo} '
-        '-t {wildcards.quant} '
-        '-o {output} '
 
 rule tximport_gene_counts:
     input:
