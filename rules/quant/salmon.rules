@@ -71,7 +71,7 @@ def sample_args(wildcards):
 
 rule salmon_transcriptome_index:
     input:
-        transcriptome = join(REF_DIR, 'fasta', 'transcriptome.fa')
+        transcriptome = join(REF_DIR, 'fasta', 'gtf.rsem.transcripts.fa')
     params:
         args = '--perfectHash -k 31 --keepDuplicates',
         index_dir = join(REF_DIR, 'salmon')

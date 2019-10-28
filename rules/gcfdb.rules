@@ -4,38 +4,8 @@ if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
         c  = yaml.load(fh) or {}
         update_config2(config, c)
-
-ORG = config['organism']
-
-if 'REF_DIR' in locals() and REF_DIR is not None:
-    pass
-elif 'ref_dir' in config:
-    REF_DIR = config['ref_dir']
-elif 'reference_db' in config['db']:
-    ref = config['db']['reference_db']
-    if ref == 'ensembl':
-        include: 'gcfdb/ensembl.db'
-    if ref == 'gencode':
-        include: 'gcfdb/gencode.db'
-
-    DB_CONF = config['db'][ref]
-    if '__' in ORG:
-        # multi-species
-        try:
-            # prebuilds
-            REF_DIR =  join(EXT_DIR, ref, ORG, DB_CONF['version'][ORG])
-        except:
-            REF_DIR = []
-            for org in ORG.split('__'):
-                REF_DIR.append(join(EXT_DIR, ref, org, DB_CONF['version'][org]))
-    else:
-        REF_DIR = join(EXT_DIR, ref, ORG, DB_CONF['version'][ORG])
-else:
-    raise ValueError('Reference dir missing. Check config or other ways for ref dir setup')
-
 include:
-    'gcfdb/convert.rules'
-
+    'gcfdb/reference_db.db'
 include:
     'gcfdb/spikein.db'
 include:

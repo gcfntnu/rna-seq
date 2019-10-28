@@ -4,8 +4,8 @@ rule multiqc_config:
     output:
         '.multiqc_config.yaml'
     params:
-        html = 'data/processed/rnaseq/multiqc/qc_report.html',
-        data_dir = 'data/processed/rnaseq/multiqc/qc_data'
+        html = 'data/processed/rnaseq/multiqc/multiqc_report.html',
+        data_dir = 'data/processed/rnaseq/multiqc/multiqc_data'
     run:
         import yaml
         conf = {}
@@ -49,10 +49,11 @@ rule multiqc_summary:
     params:
         picard = expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES),
         STAR = expand('logs/{sample}/{sample}.Log.final.out', sample=SAMPLES),
-        all = 'logs'
+        all = 'logs',
+        outdir = os.path.dirname(rules.multiqc_config.params.html)
         
         #fastp = expand('logs/{sample}/*.fastp.json', sample=SAMPLES)
     output:
         rules.multiqc_config.params.html
     shell:
-        'multiqc -f -c {input.config} {params.STAR} {input.salmon} {input.salmon2} {input.qc_bam} {params.all}'
+        'multiqc -f -c {input.config} -o {params.outdir} {params.STAR} {input.salmon} {input.salmon2} {input.qc_bam} {params.all}'
