@@ -1,6 +1,0 @@
-include:
-  'JGI.db'
-include:
-  'emvec.db'
-include:
-  'univec.db'

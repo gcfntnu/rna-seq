@@ -1,4 +1,0 @@
-include:
-    'ncbi.db'
-include:
-    'JGI.db'
