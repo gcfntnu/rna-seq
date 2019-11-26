@@ -5,6 +5,14 @@
 from os.path import join
 
 SPIKE_DIR = join(EXT_DIR, 'spikein')
+FILTER_CONF = config.get('filter')
+if FILTER_CONF is None:
+   config['filter'] = FILTER_CONF = {}
+SPIKE_CONF = FILTER_CONF.get('spikein')
+if SPIKE_CONF is None:
+   config['filter']['spikein'] = SPIKE_CONF = {}
+REF = config['filter']['spikein'].get('ref', '').split(',')
+
 
 def spikein_get_fasta(*args, **kw):
     ref = config['filter']['spikein']['ref'].split(',')
