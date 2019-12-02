@@ -4,11 +4,13 @@ if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
         c  = yaml.load(fh) or {}
         update_config2(config, c)
+GCFDB_DIR = '../../gcfdb'
 include:
-    'gcfdb/reference_db.db'
+    join(GCFDB_DIR, 'reference_db.db')
 include:
     'gcfdb/spikein.db'
 include:
     'gcfdb/contaminants.db'
 include:
     'gcfdb/rrna.db'
+
