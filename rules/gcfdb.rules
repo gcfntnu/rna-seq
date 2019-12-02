@@ -14,4 +14,4 @@ include:
 include:
     join(GCFDB_DIR, 'contaminants.db')
 include:
-    join(GCFDB_DIR, 'rrna.db')
+    'gcfdb/rrna.db'
