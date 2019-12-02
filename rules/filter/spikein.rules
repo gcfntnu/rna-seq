@@ -11,67 +11,13 @@ if FILTER_CONF is None:
 SPIKE_CONF = FILTER_CONF.get('spikein')
 if SPIKE_CONF is None:
    config['filter']['spikein'] = SPIKE_CONF = {}
-REF = config['filter']['spikein'].get('ref', '').split(',')
+REF = config['filter']['spikein'].get('ref', 'ERCC092')
 
-
-def spikein_get_fasta(*args, **kw):
-    ref = config['filter']['spikein']['ref'].split(',')
-    out = []
-    for r in ref:
-        if r.lower() == 'ercc':
-            out.append(join(EXT_DIR, 'ERCC', 'ERCC92.fa'))
-        if r.lower() == 'smallrna_calibrators':
-            out.append(join(EXT_DIR, 'smallrna_calibrators', 'calibrators.dna.fa'))
-    return out
-
-rule spikein_fasta:
-    input:
-        spikein_get_fasta
-    output:
-        join(SPIKE_DIR, 'fasta', 'spikein.fa')
-    shell:
-        'cat {input} > {output}'
-
-rule spikein_build_index_bowtie:
-    input:
-        rules.spikein_fasta.output
-    output:
-        join(SPIKE_DIR, 'index', 'bowtie', 'spikein.1.ebwt'),
-        join(SPIKE_DIR, 'index', 'bowtie', 'spikein.2.ebwt'),
-        join(SPIKE_DIR, 'index', 'bowtie', 'spikein.3.ebwt'),
-        join(SPIKE_DIR, 'index', 'bowtie', 'spikein.4.ebwt'),
-        join(SPIKE_DIR, 'index', 'bowtie', 'spikein.rev.1.ebwt'),
-        join(SPIKE_DIR, 'index', 'bowtie', 'spikein.rev.2.ebwt')
-    params:
-        index = join(SPIKE_DIR, 'index', 'bowtie', 'spikein')
-    singularity:
-        'docker://flatberg/filter:0.1'
-    shell:
-        'bowtie-build {input} {params.index}'
-
-rule spikein_build_index_bowtie2:
-    input:
-        rules.spikein_fasta.output
-    output:
-        join(SPIKE_DIR, 'index', 'bowtie2', 'spikein.1.bt2'),
-        join(SPIKE_DIR, 'index', 'bowtie2', 'spikein.2.bt2'),
-        join(SPIKE_DIR, 'index', 'bowtie2', 'spikein.3.bt2'),
-        join(SPIKE_DIR, 'index', 'bowtie2', 'spikein.4.bt2'),
-        join(SPIKE_DIR, 'index', 'bowtie2', 'spikein.rev.1.bt2'),
-        join(SPIKE_DIR, 'index', 'bowtie2', 'spikein.rev.2.bt2')
-    params:
-        index = join(SPIKE_DIR, 'index', 'bowtie2', 'spikein')
-    conda:
-        'envs/spikein.yaml'
-    singularity:
-        'docker://flatberg/filter:0.1'
-    shell:
-        'bowtie2-build {input} {params.index}'
 
 rule spikein_filter_se_bowtie:
     input:
         R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', config['filter']['trim']['trimmer'], '{sample}_R1.fastq'),
-        index = rules.spikein_build_index_bowtie.output
+        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF + '.1.ebwt')
     output:
         R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq'),
         counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.counts')
@@ -79,7 +25,7 @@ rule spikein_filter_se_bowtie:
         'docker://flatberg/filter:0.1'
     params:
         args = '-n 0 -k 1 -l 18 -q --best --norc -S ',
-        index = rules.spikein_build_index_bowtie.params.index
+        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF)
     threads:
         2
     log:
@@ -98,7 +44,7 @@ rule spikein_filter_se_bowtie:
 rule spikein_filter_se_bowtie2:
     input:
         R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', config['filter']['trim']['trimmer'], '{sample}_R1.fastq'),
-        index = rules.spikein_build_index_bowtie2.output
+        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF + '.1.bt2')
     output:
         R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq'),
         counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.counts')
@@ -106,7 +52,7 @@ rule spikein_filter_se_bowtie2:
         'docker://flatberg/filter:0.1'
     params:
         args = '-D 15 -R 2 -N 0 -L 18 -i S,1,0 --norc',
-        index = rules.spikein_build_index_bowtie2.params.index
+        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF)
     threads:
         2
     log:
@@ -122,18 +68,6 @@ rule spikein_filter_se_bowtie2:
         '2>> {log.bowtie} '
         '| samtools view -S -q5 - | cut -f3 | sort | uniq -c  > {output.counts} '
         '2>> {log.error} '
-
-rule spikein_build_index_bbmap:
-    input:
-         rules.spikein_fasta.output
-    output:
-        join(SPIKE_DIR, 'index', 'bbmap', 'ref', 'genome', '1', 'info.txt')
-    params:
-        index = join(SPIKE_DIR, 'index', 'bbmap')
-    singularity:
-        'docker://quay.io/biocontainers/bbmap'
-    shell:
-        'bbmap.sh ref={input} path={params.index}'
 
 rule spikein_filter_se_bbduk:
     input:

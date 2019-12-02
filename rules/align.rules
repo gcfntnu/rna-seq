@@ -21,26 +21,20 @@ if os.path.exists(extra_conf_fn):
     with open(extra_conf_fn) as fh:
         c  = yaml.load(fh) or {}
         update_config2(config, c)
+
+ALIGNER = config.get('align', {}).get('method', 'star')
         
 def get_sorted_bam(wildcards):
-    aligner = config.get('align', {}).get('method', 'star')
-    return join(ALIGN_INTERIM, aligner, '{sample}.sorted.bam')
+    return join(ALIGN_INTERIM, ALIGNER, wildcards.sample + '.sorted.bam')
 
-rule namesorted_bam:
-    input:
-       get_sorted_bam
-    output:
-        join(ALIGN_INTERIM, config.get('align', {}).get('method', 'star'), '{sample}.namesorted.bam')
-    threads:
-        4
-    singularity:
-        'docker://quay.io/biocontainers/sambamba:0.7.0--h89e63da_0'
-    shell:
-        'sambamba sort -N -p -m 24G -t {threads} -o {output} {input}'
+def get_namesorted_bam(wildcards):
+    return join(ALIGN_INTERIM, ALIGNER, wildcards.sample + '.namesorted.bam')
 
+if ALIGNER == 'star':
+    include:
+        'align/star.rules'
+elif ALIGNER == 'hisat2':
+    include:
+        'align/hisat2.rules'
 include:
-    'align/star.rules'  
-include:
-    'align/hisat2.rules'
-include:
-    'align/picardtools.rules'
+    'align/utils.rules'

@@ -68,8 +68,6 @@ rule contaminants_build_index_bowtie2:
         join(CONT_DIR, 'index', 'bowtie2', 'contaminants.rev.2.bt2')
     params:
         index = join(CONT_DIR, 'index', 'bowtie2', 'contaminants')
-    conda:
-        'envs/contaminants.yaml'
     singularity:
         'docker://flatberg/filter:0.1'
     shell:

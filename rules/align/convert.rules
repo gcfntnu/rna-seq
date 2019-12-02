@@ -39,6 +39,8 @@ rule bam_namesort:
     output:
         temp(join(ALIGN_INTERIM, '{aligner}', '{sample}.namesorted.bam'))
     threads:
-        16
+        8
+    singularity:
+        'docker://quay.io/biocontainers/sambamba:0.7.0--h89e63da_0'
     shell:
         'sambamba sort -N -p -m 24G -t 8 -o {output} {input.bam}'

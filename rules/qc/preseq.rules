@@ -13,12 +13,17 @@ rule qc_bam_preseq_lc_extrap:
     input:
         bam = get_sorted_bam
     output:
+        join(QC_INTERIM, 'preseq', '{sample}.ccurve.txt')
+    log:
         'logs/{sample}/{sample}.ccurve.txt'
     params:
         '-P ' if len(config['read_geometry']) > 1 else ' '
     singularity:
-        'docker://quay.io/biocontainers/preseq:2.0.3--h26b358d_2'
+        'docker://' + config['docker']['preseq']
     threads:
         1
     shell:
-        'preseq lc_extrap -B {input.bam} -o {output} {params}'
+        """
+        preseq lc_extrap -B {input.bam} -o {output} {params}
+        cp {output} {log}
+        """

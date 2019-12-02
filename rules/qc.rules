@@ -16,20 +16,32 @@ include:
 include:
     'qc/picard.rules'
 include:
-    'qc/fastqc.rules'
-include:
     'qc/preseq.rules'
 include:
     'qc/qort.rules'
-include:
-    'qc/deeptools.rules'
 
-rule qc_bam:
-    input:
-       expand('logs/{sample}/{sample}.readdist.txt', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.ccurve.txt', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES)
-       
+if len(config['read_geometry']) > 1:
+    rule qc_bam:
+        input:
+            expand(rules.qc_bam_rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_junction_saturation.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_tin.output, sample=SAMPLES),
+            expand(rules.qc_bam_picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.qc_bam_preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qc_bam_qorts.output, sample=SAMPLES),
+            expand(rules.qc_bam_picard_insertsize.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_inner_distance.output, sample=SAMPLES)
+else:
+    rule qc_bam:
+        input:
+            expand(rules.qc_bam_rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_junction_saturation.output, sample=SAMPLES),
+            expand(rules.qc_bam_rseqc_tin.output, sample=SAMPLES),
+            expand(rules.qc_bam_picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.qc_bam_preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qc_bam_qorts.output, sample=SAMPLES)
+            
 include:
     'qc/multiqc.rules'

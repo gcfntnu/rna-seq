@@ -4,6 +4,9 @@ data and formats such as SAM/BAM/CRAM and VCF.
 
 https://broadinstitute.github.io/picard/
 """
+
+QC_PICARD = join(QC_INTERIM, 'picard')
+
 rule qc_bam_create_ribointervals:
     input:
         gtf = join(REF_DIR, 'genes', 'genes.gtf'),
@@ -11,7 +14,7 @@ rule qc_bam_create_ribointervals:
     output:
         join(REF_DIR, 'genes', 'rrna.intervals')
     singularity:
-        'docker://gcfntnu/ensembl:0.1'
+        'docker://' + config['docker']['samtools']
     shell:
         """
         samtools view -H {input.bam} > /mnt/scratch/dummy
@@ -25,38 +28,34 @@ rule qc_bam_picard_rnametrics:
         ref_flat = join(REF_DIR, 'genes', 'genes.refflat.gz'),
         rrna = rules.qc_bam_create_ribointervals.output
     output:
+        metrics = join(QC_PICARD, '{sample}.rnaseq.metrics')
+    log:
         metrics = 'logs/{sample}/{sample}.rnaseq.metrics'
     params:
-        java_opt="-Xms4g -Xmx4g"
+        java_opt='-Xms4g -Xmx4g'
     threads:
         4
     singularity:
         'docker://gcfntnu/picard:2.18'
     shell:
-        'picard CollectRnaSeqMetrics '
-        '{params.java_opt} '
-        'INPUT={input.bam} '
-        'OUTPUT={output.metrics} '
-        'REF_FLAT={input.ref_flat} '
-        'STRAND=SECOND_READ_TRANSCRIPTION_STRAND '
-        'ASSUME_SORTED=FALSE '
-        'RIBOSOMAL_INTERVALS={input.rrna} '
-        'VALIDATION_STRINGENCY=SILENT '
+        """
+        picard CollectRnaSeqMetrics {params.java_opt} INPUT={input.bam} OUTPUT={output.metrics} REF_FLAT={input.ref_flat} STRAND=SECOND_READ_TRANSCRIPTION_STRAND ASSUME_SORTED=TRUE RIBOSOMAL_INTERVALS={input.rrna} VALIDATION_STRINGENCY=SILENT
+        cp {output.metrics} {log.metrics}
+        """
 
 rule qc_bam_picard_insertsize:
     input:
         bam = get_sorted_bam
-    params:
-        out = 'logs/{sample}'
     output:
-        'logs/{sample}/insert_size_metric.tsv'
+        log = join(QC_PICARD, '{sample}.insert_size_metric.tsv'),
+        pdf = join(QC_PICARD, '{sample}.insert_size_metric.pdf')
     log:
-        'logs/{sample}/insert_size_metric.pdf'
+        'logs/{sample}/{sample}.insert_size_metric.tsv'
     singularity:
-        'docker://flatberg/refdb:0.1'
+        'docker://gcfntnu/picard:2.18'
     shell:
-        'picard CollectInsertSizeMetrics '
-        'INPUT={input.bam} '
-        'H={log} '
-        'OUTPUT={output} '
+        """
+        picard CollectInsertSizeMetrics INPUT={input.bam} H={output.pdf} OUTPUT={output.log}
+        cp {output.log} {log}
+        """
 

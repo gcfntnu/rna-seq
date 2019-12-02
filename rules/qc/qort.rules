@@ -1,11 +1,10 @@
 #-*- mode: snakemake -*-
-"""Picard: A set of command line tools (in Java) for manipulating high-throughput sequencing (HTS) 
-data and formats such as SAM/BAM/CRAM and VCF.
-
-https://broadinstitute.github.io/picard/
+"""QoRTs: Quality of RNA-seq Tool-Set
+https://hartleys.github.io/QoRTs/
 """
+QC_QORT = join(QC_INTERIM, 'qort')
 
-rule qc_bam_qort:
+rule qc_bam_qorts:
     input:
         gtf = join(REF_DIR, 'genes', 'genes.gtf'),
         bam = get_sorted_bam
@@ -15,13 +14,13 @@ rule qc_bam_qort:
         max_len = '--maxReadLength {}'.format(int(config['read_geometry'][0])),
         stranded = '--stranded',
         read_strand = '--fr_secondStrand ' if LIBPREP['strand'] == 'forward' else '',
-        outdir = 'logs/{sample}'
+        outdir = lambda wildcards, output: os.path.dirname(output.log)
     output:
-        'logs/{sample}/QC.summary.txt'
+        log = join(QC_QORT, '{sample}', 'QC.summary.txt')
     threads:
         4
     singularity:
-        'docker://quay.io/biocontainers/qorts:1.3.0--py35_0'
+        'docker://' + config['docker']['qorts']
     shell:
         'qorts {params.java_opt} QC '
         '{params.se} '

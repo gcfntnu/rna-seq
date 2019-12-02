@@ -4,72 +4,100 @@
 http://rseqc.sourceforge.net/
 
 """
+
+RSEQC_DIR = join(QC_INTERIM, 'rseqc')
+from os.path import basename
+
 rule qc_bam_rseqc_read_distribution:
     input:
         bam = get_sorted_bam,
         bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
     output:
-        'logs/{sample}/{sample}.readdist.txt'
+        join(RSEQC_DIR, '{sample}.readdist.txt')
+    log:
+       'logs/{sample}/{sample}.readdist.txt'
+    singularity:
+        'docker://' + config['docker']['rseqc']
     shell:
-        'read_distribution.py  -i {input.bam} -r {input.bed} > {output}'
+        """
+        read_distribution.py  -i {input.bam} -r {input.bed} > {output}
+        cp {output} {log}
+        """
 
 rule qc_bam_rseqc_junction_annotation:
     input:
         bam = get_sorted_bam,
         bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
     params:
-        output = 'logs/{sample}/{sample}'
-    shadow:
-        'shallow'
+        prefix = join(RSEQC_DIR, '{sample}')
     output:
+        join(RSEQC_DIR, '{sample}.junction.xls')
+    log:
         'logs/{sample}/{sample}.junction.xls'
+    singularity:
+        'docker://' + config['docker']['rseqc']
     shell:
-        'junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.output}'
+        """
+        junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
+        cp {output} {log}
+        """
         
 rule qc_bam_rseqc_junction_saturation:
     input:
         bam = get_sorted_bam,
         bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
     params:
-        output = 'logs/{sample}/{sample}'
-    shadow:
-        'shallow'
+        prefix = join(RSEQC_DIR, '{sample}')
     output:
+        join(RSEQC_DIR,  '{sample}.junctionSaturation_plot.r')
+    log:
         'logs/{sample}/{sample}.junctionSaturation_plot.r'
+    singularity:
+        'docker://' + config['docker']['rseqc']
     shell:
-        'junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.output}'
+        """
+        junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
+        cp {output} {log}
+        """
 
 rule qc_bam_rseqc_inner_distance:
     input:
         bam = get_sorted_bam,
         bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
     params:
-        output = 'logs/{sample}/{sample}'
+        prefix = join(RSEQC_DIR, '{sample}')
     output:
+        join(RSEQC_DIR, '{sample}', '{sample}.inner_distance.txt')
+    log:
         'logs/{sample}/{sample}.inner_distance.txt'
+    singularity:
+        'docker://' + config['docker']['rseqc']
     shell:
-        'inner_distance.py -i {input.bam} -r {input.bed} -o {params.output}'
+        """
+        inner_distance.py -i {input.bam} -r {input.bed} -o {params.prefix}
+        cp {output} {log}
+        """
 
 rule qc_bam_rseqc_tin:
     input:
         bam = get_sorted_bam,
         bed = join(REF_DIR, 'genes', 'genes.bed12')
     singularity:
-        'docker://quay.io/biocontainers/rseqc:3.0.0--py36hf8a1672_0'
+        'docker://' + config['docker']['rseqc']
     output:
-        'logs/{sample}/{sample}.tin.xls',
-        'logs/{sample}/{sample}.summary.txt'
+        tin = join(RSEQC_DIR, '{sample}.tin.xls'),
+        summary = join(RSEQC_DIR, '{sample}.summary.txt')
+    params:
+        tin = lambda wildcards, input: basename(input.bam).replace('.bam', '') + '.tin.xls',
+        summary = lambda wildcards, input: basename(input.bam).replace('.bam', '') + '.summary.txt'
+    log:
+        tin = 'logs/{sample}/{sample}.tin.xls',
+        summary = 'logs/{sample}/{sample}.summary.txt'
     shell:
-        'tin.py -i {input.bam} -r {input.bed} && mv '       
-
-       
-        
-
+        """
+        tin.py -i {input.bam} -r {input.bed} 
+        mv {params.tin} {output.tin}
+        mv {params.summary} {output.summary}
+        cp {output.tin} {log.tin}
+        cp {output.summary} {log.summary}
+        """

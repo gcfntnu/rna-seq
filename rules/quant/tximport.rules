@@ -6,7 +6,7 @@ rule tximport_gene_counts:
     params:
         script = srcdir('scripts/tximport2csv.R')
     singularity:
-        'docker://gcfntnu/tximport:1.12.3'
+        'docker://' + config['docker']['tximport']
     output:
         join(QUANT_INTERIM, '{quant}', 'tximport', 'gene_counts.tsv')
     shell:
@@ -23,7 +23,7 @@ rule tximport_gene_tpm:
     params:
         script = srcdir('scripts/tximport2csv.R')
     singularity:
-        'docker://gcfntnu/tximport:1.12.3'
+        'docker://' + config['docker']['tximport']
     output:
         join(QUANT_INTERIM, '{quant}', 'tximport', 'gene_tpm.tsv')
     shell:
@@ -40,7 +40,7 @@ rule tximport_gene_tpm_scaled:
     params:
         script = srcdir('scripts/tximport2csv.R')
     singularity:
-        'docker://gcfntnu/tximport:1.12.3'
+        docker:// + config['docker']['tximport']
     output:
         join(QUANT_INTERIM, '{quant}', 'tximport', 'gene_tpm_scaled.tsv')
     shell:
@@ -57,7 +57,7 @@ rule tximport_gene_tpm_length_scaled:
     params:
         script = srcdir('scripts/tximport2csv.R')
     singularity:
-        'docker://gcfntnu/tximport:1.12.3'
+        'docker://' + config['docker']['tximport']
     output:
         join(QUANT_INTERIM, '{quant}', 'tximport', 'gene_tpm_length_scaled.tsv')
     shell:
@@ -74,7 +74,7 @@ rule tximport_transcript_counts:
     params:
         script = srcdir('scripts/tximport2csv.R')
     singularity:
-        'docker://gcfntnu/tximport:1.12.3'
+        'docker://' + config['docker']['tximport']
     output:
         join(QUANT_INTERIM, '{quant}', 'tximport', 'transcript_counts.tsv')
     shell:
@@ -91,7 +91,7 @@ rule tximport_transcript_tpm:
     params:
         script = srcdir('scripts/tximport2csv.R')
     singularity:
-        'docker://gcfntnu/tximport:1.12.3'
+        'docker://' + config['docker']['tximport']
     output:
         join(QUANT_INTERIM, '{quant}', 'tximport', 'transcript_tpm.tsv')
     shell:
