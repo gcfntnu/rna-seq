@@ -1,103 +1,29 @@
 #-*- mode: snakemake -*-
-"""RSeQC: An RNA-seq Quality Control Package
-
-http://rseqc.sourceforge.net/
+"""
 
 """
 
-RSEQC_DIR = join(QC_INTERIM, 'rseqc')
-from os.path import basename
+rule salmon_meta_info:
+    input:
+        rules.salmon_map.output.meta_log
+    output:
+        join('logs', '{sample}', 'aux_info', 'meta_info.json')
+    shell:
+        'cp {input} {output}'
 
-rule qc_bam_rseqc_read_distribution:
+rule salmon_flendist:
     input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
+        rules.salmon_map.output.dist_log
     output:
-        join(RSEQC_DIR, '{sample}.readdist.txt')
-    log:
-       'logs/{sample}/{sample}.readdist.txt'
-    singularity:
-        'docker://' + config['docker']['rseqc']
+        join('logs', '{sample}', 'libParams', 'flenDist.txt')
     shell:
-        """
-        read_distribution.py  -i {input.bam} -r {input.bed} > {output}
-        cp {output} {log}
-        """
+        'cp {input} {output}'
 
-rule qc_bam_rseqc_junction_annotation:
+rule featurecounts_summary:
     input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    params:
-        prefix = join(RSEQC_DIR, '{sample}')
+        rules.featurecounts.output.log
     output:
-        join(RSEQC_DIR, '{sample}.junction.xls')
-    log:
-        'logs/{sample}/{sample}.junction.xls'
-    singularity:
-        'docker://' + config['docker']['rseqc']
+        'logs/{sample}/featurecounts.txt.summary'
     shell:
-        """
-        junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
-        cp {output} {log}
-        """
-        
-rule qc_bam_rseqc_junction_saturation:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    params:
-        prefix = join(RSEQC_DIR, '{sample}')
-    output:
-        join(RSEQC_DIR,  '{sample}.junctionSaturation_plot.r')
-    log:
-        'logs/{sample}/{sample}.junctionSaturation_plot.r'
-    singularity:
-        'docker://' + config['docker']['rseqc']
-    shell:
-        """
-        junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
-        cp {output} {log}
-        """
+        'cp {input} {output}'
 
-rule qc_bam_rseqc_inner_distance:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    params:
-        prefix = join(RSEQC_DIR, '{sample}')
-    output:
-        join(RSEQC_DIR, '{sample}', '{sample}.inner_distance.txt')
-    log:
-        'logs/{sample}/{sample}.inner_distance.txt'
-    singularity:
-        'docker://' + config['docker']['rseqc']
-    shell:
-        """
-        inner_distance.py -i {input.bam} -r {input.bed} -o {params.prefix}
-        cp {output} {log}
-        """
-
-rule qc_bam_rseqc_tin:
-    input:
-        bam = get_sorted_bam,
-        bed = join(REF_DIR, 'genes', 'genes.bed12')
-    singularity:
-        'docker://' + config['docker']['rseqc']
-    output:
-        tin = join(RSEQC_DIR, '{sample}.tin.xls'),
-        summary = join(RSEQC_DIR, '{sample}.summary.txt')
-    params:
-        tin = lambda wildcards, input: basename(input.bam).replace('.bam', '') + '.tin.xls',
-        summary = lambda wildcards, input: basename(input.bam).replace('.bam', '') + '.summary.txt'
-    log:
-        tin = 'logs/{sample}/{sample}.tin.xls',
-        summary = 'logs/{sample}/{sample}.summary.txt'
-    shell:
-        """
-        tin.py -i {input.bam} -r {input.bed} 
-        mv {params.tin} {output.tin}
-        mv {params.summary} {output.summary}
-        cp {output.tin} {log.tin}
-        cp {output.summary} {log.summary}
-        """

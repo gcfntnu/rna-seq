@@ -21,6 +21,8 @@ rule multiqc_config:
         tbl['star'] = {'uniquely_mapped_percent': False, 'uniquely_mapped': False}
         tbl['fastp'] = {'after_filtering_gc_content': False}
         tbl['qorts'] = {'NumberOfChromosomesCovered': False}
+        tbl['qualimap'] = {'reads_aligned': False}
+        
         conf['table_columns_visible'] = tbl
         conf['no_version_check'] = True
         conf['extra_fn_clean_exts'] = ['.namesorted', '_R1', '_R2', '.ccurve.txt', '.rnaseq.metrics', '.hisat2', '.fastp']
@@ -29,7 +31,7 @@ rule multiqc_config:
         #custom_content = {}
         #custom_content['order'] = ['fastp', ]
         #conf['custom_content'] = custom_content
-        conf['module_order'] = ['fastqc', 'fastp', 'star', 'hisat2', 'salmon', 'picard', 'qorts', 'rseqc', 'preseq', 'featureCounts']
+        conf['module_order'] = ['fastqc', 'fastp', 'star', 'hisat2', 'salmon', 'qualimap', 'picard', 'qorts', 'rseqc', 'preseq', 'featureCounts']
         if config['organism'] == 'homo_sapiens':
             conf['fastqc_config'] = {'fastqc_theoretical_gc': 'hg38_txome'}
             preseq = {'genome_size': 'hg38_genome', 'read_length': 75, 'x_axis': 'counts', 'y_axis': 'coverage'}
@@ -41,9 +43,7 @@ rule multiqc_config:
 rule multiqc_summary:
     input:
         config = rules.multiqc_config.output,
-        salmon = expand(rules.salmon_map.output.meta_log, sample=SAMPLES),
-        featurecounts = expand(rules.featurecounts.output, sample=SAMPLES),
-        qc_bam = rules.qc_bam.input
+        qc = rules.qc_all.input
     params:
         outdir = join(QC_INTERIM, 'multiqc')
     output:

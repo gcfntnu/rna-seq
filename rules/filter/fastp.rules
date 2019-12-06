@@ -12,6 +12,8 @@ rule fastp_interleave_fastq:
         pipe(join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq'))
     params:
         script = srcdir('scripts/interleave_fastq.sh')
+    version:
+        lambda wildcards: subprocess.check_output('fastp --version', shell=True)
     shell:
         '{params.script} <(zcat {input.R1}) <(zcat {input.R2}) > {output}'
 

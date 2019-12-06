@@ -16,6 +16,7 @@ RSEQC_QCDIR = join(BAM_QCDIR, 'rseqc')
 QORT_QCDIR = join(BAM_QCDIR, 'qort')
 PRESEQ_QCDIR = join(BAM_QCDIR, 'preseq')
 PICARD_QCDIR = join(BAM_QCDIR, 'picard')
+QUALIMAP_QCDIR = join(BAM_QCDIR, 'qualimap')
 
 rule rseqc_read_distribution:
     input:
@@ -190,7 +191,6 @@ rule create_ribo_intervals:
         '-O {output} '
         '-SD {input.genome} '
         
-
 rule picard_rnametrics:
     input:
         bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
@@ -225,5 +225,37 @@ rule picard_insertsize:
     shell:
         """
         picard CollectInsertSizeMetrics INPUT={input.bam} H={output.pdf} OUTPUT={output.log}
+        cp {output.log} {log}
+        """
+
+def qualimap_strand():
+    strand = LIBPREP.get('strand', 'reverse')
+    if strand == 'reverse':
+        return 'strand-specific-reverse'
+    elif strand == 'forward':
+        return 'strand-specific-forward'
+    else:
+        return 'non-strand-specific'
+    
+rule qualimap_rnaseq:
+    input:
+        bam = get_namesorted_bam,
+        gtf = join(REF_DIR, 'genes', 'genes.gtf')
+    params:
+        strand = qualimap_strand(),
+        paired = '-pe' if len(config['read_geometry']) > 1 else '',
+        java_mem = '4G',
+        outdir = join(QUALIMAP_QCDIR, '{sample}')
+    output:
+        log = join(QUALIMAP_QCDIR, '{sample}', 'rnaseq_qc_results.txt'),
+        cov = join(QUALIMAP_QCDIR, '{sample}', 'raw_data_qualimapReport', 'coverage_profile_along_genes_(total).txt')
+    log:
+        'logs/{sample}/rnaseq_qc_results.txt'
+    singularity:
+        'docker://' + config['docker']['qualimap']
+    shell:
+        """
+        unset DISPLAY
+        qualimap  rnaseq --java-mem-size={params.java_mem} -p {params.strand} {params.paired} -s -bam {input.bam} -gtf {input.gtf} -outdir {params.outdir}
         cp {output.log} {log}
         """

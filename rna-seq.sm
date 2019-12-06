@@ -16,6 +16,7 @@ from os import makedirs, environ
 import sys
 import collections
 import yaml
+import subprocess
 
 from snakemake.workflow import srcdir
 from snakemake.logging import logger

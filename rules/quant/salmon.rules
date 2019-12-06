@@ -86,9 +86,6 @@ rule salmon_map:
         unmapped = join(SALMON_INTERIM, '{sample}', 'unmapped.sam'),
         meta_log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json'),
         dist_log = join(SALMON_INTERIM, '{sample}', 'libParams', 'flenDist.txt')
-    log:
-       meta_log = join('logs', '{sample}', 'aux_info', 'meta_info.json'),
-       dist_log = join('logs', '{sample}', 'libParams', 'flenDist.txt') 
     shell:
         'salmon quant '
         '-i {params.index} '
@@ -103,10 +100,6 @@ rule salmon_map:
         '--writeMappings={output.unmapped} '
         '-o {params.output} '
         '{params.sample_args} '
-        '&& '
-        'cp {output.meta_log} {log.meta_log} '
-        '&& '
-        'cp {output.dist_log} {log.dist_log} '
         
 def unmapped_sample_args(wildcards):
     """Sample specific args for unmapped reads.

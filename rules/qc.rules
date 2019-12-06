@@ -20,7 +20,21 @@ include:
 
 
 if len(config['read_geometry']) > 1:
-    rule qc_bam:
+    rule qc_all:
+        input:
+            expand(rules.rseqc_read_distribution_log.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_annotation_log.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_saturation_log.output, sample=SAMPLES),
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qorts.output, sample=SAMPLES),
+            expand(rules.picard_insertsize.output, sample=SAMPLES),
+            expand(rules.rseqc_inner_distance.output, sample=SAMPLES),
+            expand(rules.qualimap_rnaseq.output, sample=SAMPLES),
+            expand(rules.salmon_meta_info.output, sample=SAMPLES),
+            expand(rules.salmon_flendist.output, sample=SAMPLES)
+else:
+    rule qc_all:
         input:
             expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
             expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
@@ -28,17 +42,8 @@ if len(config['read_geometry']) > 1:
             expand(rules.picard_rnametrics.output, sample=SAMPLES),
             expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
             expand(rules.qorts.output, sample=SAMPLES),
-            expand(rules.picard_insertsize.output, sample=SAMPLES),
-            expand(rules.rseqc_inner_distance.output, sample=SAMPLES)
-else:
-    rule qc_bam:
-        input:
-            expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
-            expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
-            expand(rules.rseqc_junction_saturation.output, sample=SAMPLES),
-            expand(rules.picard_rnametrics.output, sample=SAMPLES),
-            expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
-            expand(rules.qorts.output, sample=SAMPLES)
+            expand(rules.qualimap_rnaseq.output, sample=SAMPLES),
+            expand(rules.salmon_meta_info.output, sample=SAMPLES)
             
 include:
     'qc/multiqc.rules'

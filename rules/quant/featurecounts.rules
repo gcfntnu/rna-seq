@@ -35,8 +35,6 @@ rule featurecounts:
     params:
         strand = featurecounts_strand,
         paired_end = featurecounts_paired_end
-    log:
-        'logs/{sample}/featurecounts.txt.summary'
     threads:
         16
     singularity:
@@ -52,8 +50,6 @@ rule featurecounts:
         '{params.strand} '
         '{params.paired_end} '
         '{input.bam} '
-        '&& '
-        'cp {output.log} {log}'
 
 rule featurecounts_quant:
     input:
