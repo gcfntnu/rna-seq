@@ -1,0 +1,229 @@
+#-*- mode: snakemake -*-
+"""
+RSeQC: An RNA-seq Quality Control Package
+http://rseqc.sourceforge.net/
+
+QoRTs: Quality of RNA-seq Tool-Set
+https://hartleys.github.io/QoRTs/
+
+Preseq: Software for predicting library complexity and genome coverage in high-throughput sequencing.
+http://smithlabresearch.org/software/preseq/
+
+"""
+
+BAM_QCDIR = join(ALIGN_INTERIM, ALIGNER, 'QC')
+RSEQC_QCDIR = join(BAM_QCDIR, 'rseqc')
+QORT_QCDIR = join(BAM_QCDIR, 'qort')
+PRESEQ_QCDIR = join(BAM_QCDIR, 'preseq')
+PICARD_QCDIR = join(BAM_QCDIR, 'picard')
+
+rule rseqc_read_distribution:
+    input:
+        bam = get_sorted_bam,
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    output:
+        join(RSEQC_QCDIR , '{sample}.readdist.txt')
+    log:
+       'logs/{sample}/{sample}.readdist.txt'
+    singularity:
+        'docker://' + config['docker']['rseqc']
+    shell:
+        """
+        read_distribution.py  -i {input.bam} -r {input.bed} > {output}
+        cp {output} {log}
+        """
+
+rule rseqc_junction_annotation:
+    input:
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    params:
+        prefix = join(RSEQC_QCDIR, '{sample}')
+    output:
+        join(RSEQC_QCDIR, '{sample}.junction.xls')
+    log:
+        'logs/{sample}/{sample}.junction.xls'
+    singularity:
+        'docker://' + config['docker']['rseqc']
+    shell:
+        """
+        junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
+        cp {output} {log}
+        """
+        
+rule rseqc_junction_saturation:
+    input:
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    params:
+        prefix = join(RSEQC_QCDIR, '{sample}')
+    output:
+        join(RSEQC_QCDIR,  '{sample}.junctionSaturation_plot.r')
+    log:
+        'logs/{sample}/{sample}.junctionSaturation_plot.r'
+    singularity:
+        'docker://' + config['docker']['rseqc']
+    shell:
+        """
+        junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
+        cp {output} {log}
+        """
+
+rule rseqc_inner_distance:
+    input:
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    params:
+        prefix = join(RSEQC_QCDIR, '{sample}')
+    output:
+        join(RSEQC_QCDIR, '{sample}', '{sample}.inner_distance.txt')
+    log:
+        'logs/{sample}/{sample}.inner_distance.txt'
+    singularity:
+        'docker://' + config['docker']['rseqc']
+    shell:
+        """
+        inner_distance.py -i {input.bam} -r {input.bed} -o {params.prefix}
+        cp {output} {log}
+        """
+
+rule rseqc_tin:
+    input:
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
+        bed = join(REF_DIR, 'genes', 'genes.bed12')
+    singularity:
+        'docker://' + config['docker']['rseqc']
+    output:
+        tin = join(RSEQC_QCDIR, '{sample}.tin.xls'),
+        summary = join(RSEQC_QCDIR, '{sample}.summary.txt')
+    params:
+        tin = lambda wildcards, input: basename(input.bam).replace('.bam', '') + '.tin.xls',
+        summary = lambda wildcards, input: basename(input.bam).replace('.bam', '') + '.summary.txt'
+    log:
+        tin = 'logs/{sample}/{sample}.tin.xls',
+        summary = 'logs/{sample}/{sample}.summary.txt'
+    shell:
+        """
+        tin.py -i {input.bam} -r {input.bed} 
+        mv {params.tin} {output.tin}
+        mv {params.summary} {output.summary}
+        cp {output.tin} {log.tin}
+        cp {output.summary} {log.summary}
+        """
+
+rule qorts:
+    input:
+        gtf = join(REF_DIR, 'genes', 'genes.gtf'),
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam')
+    params:
+        java_opt = '-Xms4G -Xmx4G',
+        se = '--singleEnded' if len(config['read_geometry']) == 1 else '',
+        max_len = '--maxReadLength {}'.format(int(config['read_geometry'][0])),
+        stranded = '--stranded',
+        read_strand = '--fr_secondStrand ' if LIBPREP['strand'] == 'forward' else '',
+        outdir = lambda wildcards, output: os.path.dirname(output.log)
+    output:
+        log = join(QORT_QCDIR, '{sample}', 'QC.summary.txt')
+    log:
+        join('logs', '{sample}', 'QC.summary.txt')
+    threads:
+        4
+    singularity:
+        'docker://' + config['docker']['qorts']
+    shell:
+        'qorts {params.java_opt} QC '
+        '{params.se} '
+        '{params.max_len} '
+        '{params.stranded} '
+        '{params.read_strand} '
+        '{input.bam} '
+        '{input.gtf} '
+        '{params.outdir} '
+        '&& '
+        'cp {output.log} {log} '
+        
+rule preseq_lc_extrap:
+    input:
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam')
+    output:
+        join(PRESEQ_QCDIR, '{sample}.ccurve.txt')
+    log:
+        'logs/{sample}/{sample}.ccurve.txt'
+    params:
+        '-P ' if len(config['read_geometry']) > 1 else ' '
+    singularity:
+        'docker://' + config['docker']['preseq']
+    threads:
+        1
+    shell:
+        """
+        preseq lc_extrap -B {input.bam} -o {output} {params}
+        cp {output} {log}
+        """
+
+rule create_ribo_bed:
+    input:
+        gtf = join(REF_DIR, 'genes', 'genes.gtf')
+    output:
+        temp('rrna.bed')
+    singularity:
+        'docker://' + config['docker']['ucsc-scripts']
+    shell:
+        """
+        grep -i rrna {input.gtf} > rrna.gtf
+        gtfToGenePred rrna.gtf rrna.genepred
+        genePredToBed rrna.genepred {output}
+        rm rrna.gtf rrna.genepred
+        """
+        
+rule create_ribo_intervals:
+    input:
+        bed = 'rrna.bed',
+        genome = join(REF_DIR, 'fasta', 'genome.dict')
+    output:
+        temp('rrna.intervals')
+    singularity:
+        'docker://' + config['docker']['picard_gatk']
+    shell:
+        'gatk BedToIntervalList '
+        '-I {input.bed} '
+        '-O {output} '
+        '-SD {input.genome} '
+        
+
+rule picard_rnametrics:
+    input:
+        bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
+        ref_flat = join(REF_DIR, 'genes', 'genes.refflat.gz'),
+        rrna = rules.create_ribo_intervals.output
+    output:
+        metrics = join(PICARD_QCDIR, '{sample}.rnaseq.metrics')
+    log:
+        metrics = 'logs/{sample}/{sample}.rnaseq.metrics'
+    params:
+        java_opt='-Xms4g -Xmx4g'
+    threads:
+        4
+    singularity:
+        'docker://' + config['docker']['picard_gatk']
+    shell:
+        """
+        picard CollectRnaSeqMetrics {params.java_opt} INPUT={input.bam} OUTPUT={output.metrics} REF_FLAT={input.ref_flat} STRAND=SECOND_READ_TRANSCRIPTION_STRAND ASSUME_SORTED=TRUE RIBOSOMAL_INTERVALS={input.rrna} VALIDATION_STRINGENCY=SILENT
+        cp {output.metrics} {log.metrics}
+        """
+
+rule picard_insertsize:
+    input:
+        bam = get_sorted_bam
+    output:
+        log = join(PICARD_QCDIR, '{sample}.insert_size_metric.tsv'),
+        pdf = join(PICARD_QCDIR, '{sample}.insert_size_metric.pdf')
+    log:
+        'logs/{sample}/{sample}.insert_size_metric.tsv'
+    singularity:
+        'docker://' + config['docker']['picard_gatk']
+    shell:
+        """
+        picard CollectInsertSizeMetrics INPUT={input.bam} H={output.pdf} OUTPUT={output.log}
+        cp {output.log} {log}
+        """

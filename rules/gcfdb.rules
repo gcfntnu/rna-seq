@@ -5,7 +5,8 @@ if os.path.exists(extra_conf_fn):
         c  = yaml.load(fh) or {}
         update_config2(config, c)
 
-GCFDB_DIR = '../../gcfdb'
+
+GCFDB_DIR = environ.get('GCF-DB') or config.get('gcfdb_dir', '../../gcfdb')
 
 include:
     join(GCFDB_DIR, 'reference_db.db')
@@ -14,4 +15,4 @@ include:
 include:
     join(GCFDB_DIR, 'contaminants.db')
 include:
-    'gcfdb/rrna.db'
+    join(GCFDB_DIR, 'rrna.db')

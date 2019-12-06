@@ -34,8 +34,7 @@ rule featurecounts:
         gtf = join(REF_DIR, 'genes', 'genes.gtf')
     params:
         strand = featurecounts_strand,
-        paired_end = featurecounts_paired_end,
-        summary = join(FC_INTERIM, '{sample}', 'counts.txt.summary')
+        paired_end = featurecounts_paired_end
     log:
         'logs/{sample}/featurecounts.txt.summary'
     threads:
@@ -43,7 +42,8 @@ rule featurecounts:
     singularity:
         'docker://' + config['docker']['subread']
     output:
-        counts = join(FC_INTERIM, '{sample}', 'counts.txt')
+        counts = join(FC_INTERIM, '{sample}', 'counts.txt'),
+        log = join(FC_INTERIM, '{sample}', 'counts.txt.summary')
     shell:
         'featureCounts '
         '-a {input.gtf} '
@@ -51,10 +51,9 @@ rule featurecounts:
         '-T {threads} '
         '{params.strand} '
         '{params.paired_end} '
-        '{params.args} '
         '{input.bam} '
         '&& '
-        'cp {params.summary} {log}'
+        'cp {output.log} {log}'
 
 rule featurecounts_quant:
     input:

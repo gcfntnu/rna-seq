@@ -16,8 +16,23 @@ if os.path.exists(extra_conf_fn):
 HISAT_INTERIM = join(ALIGN_INTERIM, 'hisat2')
 HISAT_PROCESSED = join(ALIGN_PROCESSED, 'hisat2')
 
+PE = len(config['read_geometry']) > 1
+KIT_STRAND = LIBPREP.get('strand', 'reverse')
+if PE:
+    if KIT_STRAND == 'forward':
+        HISAT_STRAND = 'FR'
+    else :
+        HISAT_STRAND = 'RF'
+else:
+    if KIT_STRAND == 'forward':
+        HISAT_STRAND = 'F'
+    else :
+        HISAT_STRAND = 'R'
+
+
 def hisat2_input(wildcards):
     fastq = get_processed_fastq(wildcards)
+    print(fastq)
     sample = config['samples'][wildcards.sample]
     PE = sample.get('paired_end') or len(config['read_geometry']) > 1
     R1 = fastq['R1']
@@ -28,7 +43,9 @@ def hisat2_input(wildcards):
     else:
         input = '-U ' + ','.join(R1)
     return input
-    
+
+
+
 rule hisat2_align:
     input:
         unpack(get_processed_fastq),
@@ -37,15 +54,22 @@ rule hisat2_align:
     params:
         input = hisat2_input,
         index = lambda wildcards,input: input.index.split('.1.ht2')[0],
+        strand = HISAT_STRAND,
         unaligned = join(HISAT_INTERIM, '{sample}.unaligned.fastq.gz')
     output:
-        sam = pipe(join(HISAT_INTERIM, '{sample}.out.sam'))
+        sam = temp(join(HISAT_INTERIM, '{sample}.out.sam'))
     threads:
-        40
+        24
     singularity:
         'docker://' + config['docker']['hisat2']
+    log:
+        join('logs', '{sample}', '{sample}.hisat2.log')
     shell:
         'hisat2 '
+        '--rna-strandness {params.strand} '
+        '--summary-file {log} '
+        '--new-summary '
+        '--met-file test.log'
         '-p {threads} '
         '--un-conc-gz {params.unaligned} '
         '-x {params.index} '
@@ -66,4 +90,4 @@ rule hisat2_all:
     input:
         expand(rules.hisat2_sorted_bam.output.bam, sample=SAMPLES)
     output:
-        temp(touch('.align.finalized'))
+        temp(touch('.hisat2.align.finalized'))

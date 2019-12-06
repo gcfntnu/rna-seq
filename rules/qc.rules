@@ -12,36 +12,33 @@ if os.path.exists(extra_conf_fn):
         c  = yaml.load(fh) or {}
         update_config2(config, c)      
 include:
-    'qc/rseqc.rules'
+    'qc/fastq.rules'
 include:
-    'qc/picard.rules'
+    'qc/bam.rules'
 include:
-    'qc/preseq.rules'
-include:
-    'qc/qort.rules'
+    'qc/quant.rules'
+
 
 if len(config['read_geometry']) > 1:
     rule qc_bam:
         input:
-            expand(rules.qc_bam_rseqc_read_distribution.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_junction_annotation.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_junction_saturation.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_tin.output, sample=SAMPLES),
-            expand(rules.qc_bam_picard_rnametrics.output, sample=SAMPLES),
-            expand(rules.qc_bam_preseq_lc_extrap.output, sample=SAMPLES),
-            expand(rules.qc_bam_qorts.output, sample=SAMPLES),
-            expand(rules.qc_bam_picard_insertsize.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_inner_distance.output, sample=SAMPLES)
+            expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_saturation.output, sample=SAMPLES),
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qorts.output, sample=SAMPLES),
+            expand(rules.picard_insertsize.output, sample=SAMPLES),
+            expand(rules.rseqc_inner_distance.output, sample=SAMPLES)
 else:
     rule qc_bam:
         input:
-            expand(rules.qc_bam_rseqc_read_distribution.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_junction_annotation.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_junction_saturation.output, sample=SAMPLES),
-            expand(rules.qc_bam_rseqc_tin.output, sample=SAMPLES),
-            expand(rules.qc_bam_picard_rnametrics.output, sample=SAMPLES),
-            expand(rules.qc_bam_preseq_lc_extrap.output, sample=SAMPLES),
-            expand(rules.qc_bam_qorts.output, sample=SAMPLES)
+            expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_saturation.output, sample=SAMPLES),
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qorts.output, sample=SAMPLES)
             
 include:
     'qc/multiqc.rules'

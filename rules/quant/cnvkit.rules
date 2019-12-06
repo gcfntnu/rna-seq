@@ -1,5 +1,6 @@
 #-*- mode: snakemake -*-
-"""Snakemake rules for estmating copynumber variations in RNA-seq data"""
+"""CNVkit, estmating copynumber variations in RNA-seq data
+"""
 
 
 rule cnvkit_rna:

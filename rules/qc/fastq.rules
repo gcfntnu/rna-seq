@@ -1,0 +1,17 @@
+#-*- mode: snakemake -*-
+"""
+
+
+"""
+
+rule qc_fastq_fastqc:
+    input:
+        unpack(get_processed_fastq)
+    output:
+        'logs/{sample}/{sample}_fastqc.zip'
+    params:
+        out = 'logs/{sample}'
+    threads:
+        4
+    shell:
+        'fastqc -t {threads} -o {params.out} {input}'

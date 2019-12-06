@@ -30,11 +30,10 @@ def get_sorted_bam(wildcards):
 def get_namesorted_bam(wildcards):
     return join(ALIGN_INTERIM, ALIGNER, wildcards.sample + '.namesorted.bam')
 
-if ALIGNER == 'star':
-    include:
-        'align/star.rules'
-elif ALIGNER == 'hisat2':
-    include:
-        'align/hisat2.rules'
+
+include:
+    'align/star.rules'
+include:
+    'align/hisat2.rules'
 include:
     'align/utils.rules'

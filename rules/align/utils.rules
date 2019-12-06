@@ -19,7 +19,7 @@ def optical_dup_args(*args, **kw):
 rule picard_mark_duplicates:
     input:
         bam = join(ALIGN_INTERIM, ALIGNER, '{sample}.Aligned.sortedByCoord.out.bam'),
-        mem = '.align.finalized'
+        mem = '.{}.align.finalized'.format(ALIGNER)
     output:
         bam = join(ALIGN_INTERIM, ALIGNER, '{sample}.sorted.bam'),
         bai = join(ALIGN_INTERIM, ALIGNER, '{sample}.sorted.bai'),

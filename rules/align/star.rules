@@ -44,19 +44,20 @@ def star_input_params(wildcards):
     input_string = ' '.join([R1, R2])
     return input_string
 
-def star_genome():
+def star_genome_dir():
     max_rlen = int(max(config['read_geometry'])) - 1
-    dir = join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(max_rlen), 'SA')
-    return dir
+    return join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(max_rlen))
+
+
                
 rule star_firstpass:
     input:
         unpack(get_processed_fastq),
-        genome = star_genome()
+        genome = join(star_genome_dir(), 'SA')
     params:
         prefix = lambda wildcards, output: output[0].split('SJ.out.tab')[0],
         fastq = star_input_params,
-        genome_dir = lambda wildcards, input: os.path.dirname(input.genome)
+        genome_dir = star_genome_dir()
     output:
         sj = join(STAR_INTERIM, '{sample}.firstpass.SJ.out.tab')
     shadow:
@@ -89,7 +90,7 @@ rule star_clean_memory_1pass:
     input:
         rules.star_collect_1pass_junctions.output
     params:
-        rules.star_firstpass.params.genome_dir
+        star_genome_dir()
     output:
         temp(touch('.star.mem.1pass.cleaned'))
     singularity:
@@ -119,13 +120,13 @@ if config['align']['star']['twopass']:
     rule star_align:
         input:
             unpack(get_processed_fastq),
-            genome = star_genome(),
+            genome = join(star_genome_dir(), 'SA'),
             sj = expand(rules.star_firstpass.output, sample=SAMPLES),
             mem = '.star.mem.1pass.cleaned'
         params:
             fastq = star_input_params,
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
-            genome_dir = lambda wildcards, input: os.path.dirname(input.genome),
+            genome_dir = star_genome_dir(),
             args = config['align']['star']['args']
         output:
             bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
@@ -142,6 +143,7 @@ if config['align']['star']['twopass']:
             '--outFileNamePrefix {params.prefix} '
             '--readFilesIn {params.fastq} '
             '--sjdbFileChrStartEnd {input.sj} '
+            '--twopassMode None '
             '{params.args} '
             '&& '
             'cp {params.prefix}Log.final.out {log} '
@@ -149,11 +151,11 @@ else:
     rule star_align:
         input:
             unpack(get_processed_fastq),
-            genome = star_genome()
+            genome = join(star_genome_dir(), 'SA')
         params:
             fastq = star_input_params,
             prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
-            genome_dir = lambda wildcards, input: os.path.dirname(input.genome),
+            genome_dir = star_genome_dir(),
             args = config['align']['star']['args']
         output:
             bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
@@ -169,6 +171,7 @@ else:
             '--genomeDir {params.genome_dir} '
             '--outFileNamePrefix {params.prefix} '
             '--readFilesIn {params.fastq} '
+            '--genomeLoad LoadAndKeep '
             '{params.args} '
             '&& '
             'cp {params.prefix}Log.final.out {log} '
@@ -177,9 +180,9 @@ rule star_all:
     input:
         all_bams = expand(rules.star_align.output.bam, sample=SAMPLES)
     params:
-        genome_dir = os.path.dirname(star_genome())
+        genome_dir = star_genome_dir()
     output:
-        temp(touch('.align.finalized'))
+        temp(touch('.star.align.finalized'))
     singularity:
         'docker://' + config['docker']['star']
     priority:

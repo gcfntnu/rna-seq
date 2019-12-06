@@ -86,6 +86,9 @@ rule salmon_map:
         unmapped = join(SALMON_INTERIM, '{sample}', 'unmapped.sam'),
         meta_log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json'),
         dist_log = join(SALMON_INTERIM, '{sample}', 'libParams', 'flenDist.txt')
+    log:
+       meta_log = join('logs', '{sample}', 'aux_info', 'meta_info.json'),
+       dist_log = join('logs', '{sample}', 'libParams', 'flenDist.txt') 
     shell:
         'salmon quant '
         '-i {params.index} '
@@ -100,6 +103,10 @@ rule salmon_map:
         '--writeMappings={output.unmapped} '
         '-o {params.output} '
         '{params.sample_args} '
+        '&& '
+        'cp {output.meta_log} {log.meta_log} '
+        '&& '
+        'cp {output.dist_log} {log.dist_log} '
         
 def unmapped_sample_args(wildcards):
     """Sample specific args for unmapped reads.
@@ -132,7 +139,7 @@ rule salmon_unmapped_fastq:
         '{params.args} '
         '-o {params.prefix} '
 
-rule salmon_tximport:
+rule salmon_quant:
     input:
         files = expand(join(SALMON_INTERIM, '{sample}', 'quant.sf'), sample=SAMPLES),
         txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')
@@ -141,9 +148,9 @@ rule salmon_tximport:
     singularity:
         'docker://' + config['docker']['tximport']
     output:
-        rds = join(QUANT_INTERIM, '{quant}', 'tximport', 'tximport_{quant}.rds')
+        rds = join(QUANT_INTERIM, 'salmon', 'tximport', 'dat.rds')
     shell:
         'Rscript {params.script} {input.files} '
         '--txinfo {input.txinfo} '
-        '-t {wildcards.quant} '
+        '-t salmon '
         '-o {output} '
