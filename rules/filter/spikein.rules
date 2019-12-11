@@ -12,83 +12,139 @@ SPIKE_CONF = FILTER_CONF.get('spikein')
 if SPIKE_CONF is None:
    config['filter']['spikein'] = SPIKE_CONF = {}
 REF = config['filter']['spikein'].get('ref', 'ERCC092')
+PE = len(config['read_geometry']) > 1
 
+def get_trimmed_fastq(wildcards):
+   trimmer = config['filter']['trim']['trimmer']
+   R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', trimmer, '{sample}_R1.fastq')
+   if PE:
+      R2 = join(FILTER_INTERIM, '{merge}', 'trimmed', trimmer, '{sample}_R2.fastq')
+      return {'R1': R1, 'R2': R2}
+   return {'R1': R1}
 
-rule spikein_filter_se_bowtie:
-    input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', config['filter']['trim']['trimmer'], '{sample}_R1.fastq'),
-        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF + '.1.ebwt')
-    output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq'),
-        counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.counts')
-    singularity:
-        'docker://flatberg/filter:0.1'
-    params:
-        args = '-n 0 -k 1 -l 18 -q --best --norc -S ',
-        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF)
-    threads:
-        2
-    log:
-        bowtie = 'logs/{sample}/filter.{merge}.spikein.bowtie.log',
-        error = 'logs/{sample}/filter.{merge}.spikein.bowtie.error'
-    shell:
-        'bowtie {params.index} '
-        '{input.R1} '
-        '--un {output.R1} '
-        '-p {threads} '
-        '{params.args} '
-        '2>> {log.bowtie} '
-        '| samtools view -q 5 -S - | cut -f3 | sort | uniq -c  > {output.counts} '
-        '2>> {log.error} '
+if PE:
+   rule spikein_filter_bowtie:
+        input:
+            unpack(get_trimmed_fastq),
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF + '.1.ebwt')
+        output:
+            R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_1.fastq'),
+            R2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_2.fastq')
+            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.counts')
+        singularity:
+            'docker://' + config['docker']['bowtie_samtools']
+        params:
+            args = '-n 0 -k 1 -q --best --norc -S ',
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF),
+            prefix = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}')
+        threads:
+            2
+        log:
+            bowtie = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.spikein.bowtie.log'),
+            error = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.spikein.bowtie.error')
+        shell:
+            'bowtie {params.index} '
+            '-1 {input.R1} '
+            '-2 {input.R2} '
+            '--un {params.prefix} '
+            '-p {threads} '
+            '{params.args} '
+            '2>> {log.bowtie} '
+            '| samtools view -q 5 -S - | cut -f3 | sort | uniq -c  > {output.counts} '
+            '2>> {log.error} '
+            
+    rule spikein_filter_bowtie2:
+        input:
+            unpack(get_trimmed_fastq),
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF + '.1.bt2')
+        output:
+            R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq'),
+            R2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R2.fastq'),
+            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.counts')
+        singularity:
+            'docker://' + config['docker']['bowtie2_samtools']
+        params:
+            args = '-D 15 -R 2 -N 0 -i S,1,0 --norc',
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF),
+            prefix = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R%.fastq')
+        threads:
+            2
+        log:
+            bowtie2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.spikein.bowtie2.log'),
+            error = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.spikein.bowtie2.error')
+        shell:
+            'bowtie2 '
+            '-1 {input.R1} '
+            '-2 {input.R2} '
+            '--un-conc {params.prefix} '
+            '-x {params.index} '
+            '-p {threads} '
+            '{params.args} '
+            '2>> {log.bowtie2} '
+            '| samtools view -S -q5 - | cut -f3 | sort | uniq -c  > {output.counts} '
+            '2>> {log.error} '
+
+else:
+    rule spikein_filter_bowtie:
+        input:
+            unpack(get_trimmed_fastq),
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF + '.1.ebwt')
+        output:
+            R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq'),
+            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.counts')
+        singularity:
+            'docker://flatberg/filter:0.1'
+        params:
+            args = '-n 0 -k 1 -l 18 -q --best --norc -S ',
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF)
+        threads:
+            2
+        log:
+            bowtie = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.spikein.bowtie.log'),
+            error = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.spikein.bowtie.error')
+        shell:
+            'bowtie {params.index} '
+            '{input.R1} '
+            '--un {output.R1} '
+            '-p {threads} '
+            '{params.args} '
+            '2>> {log.bowtie} '
+            '| samtools view -q 5 -S - | cut -f3 | sort | uniq -c  > {output.counts} '
+            '2>> {log.error} '
         
-rule spikein_filter_se_bowtie2:
-    input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', config['filter']['trim']['trimmer'], '{sample}_R1.fastq'),
-        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF + '.1.bt2')
-    output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq'),
-        counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.counts')
-    singularity:
-        'docker://flatberg/filter:0.1'
-    params:
-        args = '-D 15 -R 2 -N 0 -L 18 -i S,1,0 --norc',
-        index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF)
-    threads:
-        2
-    log:
-        bowtie = 'logs/{sample}/filter.{merge}.spikein.bowtie2.log',
-        error = 'logs/{sample}/filter.{merge}.error'
-    shell:
-        'bowtie2 '
-        '-U {input.R1} '
-        '--un {output.R1} '
-        '-x {params.index} '
-        '-p {threads} '
-        '{params.args} '
-        '2>> {log.bowtie} '
-        '| samtools view -S -q5 - | cut -f3 | sort | uniq -c  > {output.counts} '
-        '2>> {log.error} '
-
-rule spikein_filter_se_bbduk:
-    input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', config['filter']['trim']['trimmer'], '{sample}_R1.fastq'),
-        ref = rules.spikein_fasta.output
-    output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bbduk', '{sample}_R1.fastq'),
-        counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bbduk', '{sample}_R1.counts')
-    singularity:
-        'docker://quay.io/biocontainers/bbmap'
-    threads:
-        4
-    log:
-        'logs/{sample}/filter.{merge}.spikein.bbduk.log'
-    shell:
-        'bbduk.sh in={input.R1} overwrite=true outu={output.R1} threads={threads} rcomp=f k=21 stats={output.counts} ref={input.ref} 2>{log}'
+    rule spikein_filter_bowtie2:
+        input:
+            unpack(get_trimmed_fastq),
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF + '.1.bt2')
+        output:
+            R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq'),
+            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.counts')
+        singularity:
+            'docker://' + config['docker']['bowtie2_samtools']
+        params:
+            args = '-D 15 -R 2 -N 0 -i S,1,0 --norc',
+            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF)
+        threads:
+            2
+        log:
+            bowtie2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.spikein.bowtie2.log'),
+            error = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.spikein.bowtie2.error')
+        shell:
+            'bowtie2 '
+            '-1 {input.R1} '
+            '-2 {input.R2} '
+            '--un-conc {output.R1} '
+            '-x {params.index} '
+            '-p {threads} '
+            '{params.args} '
+            '2>> {log.bowtie2} '
+            '| samtools view -S -q5 - | cut -f3 | sort | uniq -c  > {output.counts} '
+            '2>> {log.error} '
 
 rule spikein_filter_skip:
-    input:
-        R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', 'fastp', '{sample}_R{readnum}.fastq')
-    output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R{readnum}.fastq')
-    shell:
-        'ln -sr {input} {output}'
+       input:
+           R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', 'fastp', '{sample}_R{readnum}.fastq')
+       output:
+           R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R{readnum}.fastq')
+       shell:
+           'ln -sr {input} {output}'
