@@ -22,9 +22,9 @@ include:
 if len(config['read_geometry']) > 1:
     rule qc_all:
         input:
-            expand(rules.rseqc_read_distribution_log.output, sample=SAMPLES),
-            expand(rules.rseqc_junction_annotation_log.output, sample=SAMPLES),
-            expand(rules.rseqc_junction_saturation_log.output, sample=SAMPLES),
+            expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_saturation.output, sample=SAMPLES),
             expand(rules.picard_rnametrics.output, sample=SAMPLES),
             expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
             expand(rules.qorts.output, sample=SAMPLES),

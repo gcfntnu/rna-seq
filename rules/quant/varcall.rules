@@ -55,7 +55,7 @@ rule gatk_split_and_trim:
         '-I {input.bam} '
         '-O {output.bam} '
 
-rule gatk_var_call:
+rule gatk_varcall:
     input:
         bam = join(VARCALL_INTERIM, '{sample}.bam.split'),
         genome = join(REF_DIR, 'fasta', 'genome.fa')
@@ -88,7 +88,7 @@ rule gatk_var_filter:
         """
 
 
-rule gatk_var_call_all:
+rule gatk_varcall_all:
     input:
         expand(join(VARCALL_INTERIM, '{sample}.filtered.vcf'), sample=SAMPLES)
     output:

@@ -11,7 +11,7 @@ if os.path.exists(extra_conf_fn):
         update_config2(config, c)
 
 FC_INTERIM = join(QUANT_INTERIM, config['align']['method'], 'featurecounts')
-FC_PROCESSED = join(QUANT_PROCESSED, 'featurecounts')
+
 
 def featurecounts_strand(wildcards, **kw):
     read_orientation = config.get('read_orientation')
@@ -56,14 +56,14 @@ rule featurecounts_quant:
         counts = expand(rules.featurecounts.output.counts, sample=SAMPLES),
         gene_info = join(REF_DIR, 'genes', 'genes.tsv')
     params:
-        output = join(FC_PROCESSED, 'featurecounts'),
+        output = join(FC_INTERIM, 'featurecounts'),
         script = srcdir('scripts/gene_quant.R')
     singularity:
         'docker://' + config['docker']['tximport']
     output:
-        gene_counts = join(FC_PROCESSED, 'featurecounts.gene.quant'),
-        tpm = join(FC_PROCESSED, 'featurecounts.gene.tpm'),
-        gene_info = join(FC_PROCESSED, 'featurecounts.gene_info.tsv')
+        gene_counts = join(FC_INTERIM, 'featurecounts.gene.quant'),
+        tpm = join(FC_INTERIM, 'featurecounts.gene.tpm'),
+        gene_info = join(FC_INTERIM, 'featurecounts.gene_info.tsv')
     shell:
         'Rscript {params.script} '
         '{input.counts} '

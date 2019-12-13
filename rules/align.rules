@@ -2,13 +2,9 @@
 """
 Snakemake rules for aligning rna-seq fastq files to genome.
 
-
-Dependencies
-------------
 STAR, https://github.com/alexdobin/STAR
+HISAT2
 
-Install:
-conda -c bionconda install star
 
 """
 import os
@@ -37,3 +33,13 @@ include:
     'align/hisat2.rules'
 include:
     'align/utils.rules'
+
+rule _align:
+    input:
+        get_sorted_bam
+    output:
+        temp(touch('.{sample}.alinged'))
+
+rule align_all:
+    input:
+        expand(rules._align.output, sample=SAMPLES)

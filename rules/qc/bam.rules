@@ -24,15 +24,18 @@ rule rseqc_read_distribution:
         bed = join(REF_DIR, 'genes', 'genes.bed12')
     output:
         join(RSEQC_QCDIR , '{sample}.readdist.txt')
-    log:
-       'logs/{sample}/{sample}.readdist.txt'
     singularity:
         'docker://' + config['docker']['rseqc']
     shell:
-        """
-        read_distribution.py  -i {input.bam} -r {input.bed} > {output}
-        cp {output} {log}
-        """
+        'read_distribution.py  -i {input.bam} -r {input.bed} > {output}'
+
+rule rseqc_read_distribution_log:
+    input:
+        rules.rseqc_read_distribution.output
+    output:
+        'logs/{sample}/{sample}.readdist.txt'
+    output:
+        'cp {input} {output}'
 
 rule rseqc_junction_annotation:
     input:
@@ -42,15 +45,18 @@ rule rseqc_junction_annotation:
         prefix = join(RSEQC_QCDIR, '{sample}')
     output:
         join(RSEQC_QCDIR, '{sample}.junction.xls')
-    log:
-        'logs/{sample}/{sample}.junction.xls'
     singularity:
         'docker://' + config['docker']['rseqc']
     shell:
-        """
-        junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
-        cp {output} {log}
-        """
+        'junction_annotation.py  -i {input.bam} -r {input.bed} -o {params.prefix}'
+    
+rule rseqc_junction_annotation_log:        
+    input:
+        rules.rseqc_junction_annotation.output
+    output:
+        'logs/{sample}/{sample}.junction.xls'
+    shell:
+        'cp {input} {output} '
         
 rule rseqc_junction_saturation:
     input:
@@ -60,16 +66,19 @@ rule rseqc_junction_saturation:
         prefix = join(RSEQC_QCDIR, '{sample}')
     output:
         join(RSEQC_QCDIR,  '{sample}.junctionSaturation_plot.r')
-    log:
-        'logs/{sample}/{sample}.junctionSaturation_plot.r'
     singularity:
         'docker://' + config['docker']['rseqc']
     shell:
-        """
-        junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.prefix}
-        cp {output} {log}
-        """
+        'junction_saturation.py  -i {input.bam} -r {input.bed} -o {params.prefix}'
 
+rule rseqc_junction_saturation_log:
+    input:
+        rules.rseqc_junction_saturation.output
+    output:
+        'logs/{sample}/{sample}.junctionSaturation_plot.r'
+    shell:
+        'cp {input} {output} '
+        
 rule rseqc_inner_distance:
     input:
         bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam'),
@@ -77,16 +86,19 @@ rule rseqc_inner_distance:
     params:
         prefix = join(RSEQC_QCDIR, '{sample}')
     output:
-        join(RSEQC_QCDIR, '{sample}', '{sample}.inner_distance.txt')
-    log:
-        'logs/{sample}/{sample}.inner_distance.txt'
+        join(RSEQC_QCDIR, '{sample}.inner_distance.txt')
     singularity:
         'docker://' + config['docker']['rseqc']
     shell:
-        """
-        inner_distance.py -i {input.bam} -r {input.bed} -o {params.prefix}
-        cp {output} {log}
-        """
+        'inner_distance.py -i {input.bam} -r {input.bed} -o {params.prefix} '
+
+rule rseqc_inner_distance_log:
+    input:
+        rules.rseqc_inner_distance.output
+    output:
+        'logs/{sample}/{sample}.inner_distance.txt'
+    shell:
+        'cp {input} {output} '
 
 rule rseqc_tin:
     input:
@@ -112,6 +124,14 @@ rule rseqc_tin:
         cp {output.summary} {log.summary}
         """
 
+rule rseqc_tin_log:
+    input:
+        rules.rseqc_tin.output.tin
+    output:
+        'logs/{sample}/{sample}.tin.xls'
+    shell:
+        'cp {input} {output} '
+        
 rule qorts:
     input:
         gtf = join(REF_DIR, 'genes', 'genes.gtf'),
@@ -147,19 +167,18 @@ rule preseq_lc_extrap:
     input:
         bam = join(ALIGN_INTERIM, ALIGNER, '{sample}' + '.sorted.bam')
     output:
-        join(PRESEQ_QCDIR, '{sample}.ccurve.txt')
-    log:
-        'logs/{sample}/{sample}.ccurve.txt'
+        log = join(PRESEQ_QCDIR, '{sample}.ccurve.txt'),
+        log2 = 'logs/{sample}/{sample}.ccurve.txt'
     params:
-        '-P ' if len(config['read_geometry']) > 1 else ' '
+        '-P -seg_len 9000000 ' if len(config['read_geometry']) > 1 else ' '
     singularity:
         'docker://' + config['docker']['preseq']
     threads:
         1
     shell:
         """
-        preseq lc_extrap -B {input.bam} -o {output} {params}
-        cp {output} {log}
+        preseq lc_extrap -B {input.bam} -Q {params} -o {output}
+        cp {output.log} {output.log2}
         """
 
 rule create_ribo_bed:
@@ -244,7 +263,7 @@ rule qualimap_rnaseq:
     params:
         strand = qualimap_strand(),
         paired = '-pe' if len(config['read_geometry']) > 1 else '',
-        java_mem = '4G',
+        java_mem = '8G',
         outdir = join(QUALIMAP_QCDIR, '{sample}')
     output:
         log = join(QUALIMAP_QCDIR, '{sample}', 'rnaseq_qc_results.txt'),

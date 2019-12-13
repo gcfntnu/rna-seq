@@ -13,8 +13,8 @@ def get_contaminants_fastq(wildcards):
    q = config['filter']['contaminants']['quantifier']
    R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', q, '{sample}_R1.fastq')
    if PE:
-       R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', q, '{sample}_1.fastq')
-       R2 = join(FILTER_INTERIM, '{merge}', 'contaminants', q, '{sample}_2.fastq')
+       R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', q, '{sample}_R1.fastq')
+       R2 = join(FILTER_INTERIM, '{merge}', 'contaminants', q, '{sample}_R2.fastq')
        return {'R1': R1, 'R2': R2}
    return {'R1': R1}
 
@@ -31,7 +31,7 @@ if PE:
             'docker://' + config['docker']['bowtie2_samtools']
         params:
             args = '-D 15 -R 2 -N 0 -i S,1,0 --norc',
-            index = join(EXT_DIR, REF, ORG, 'index', 'rrna', 'bowtie2', 'rrna'),
+            index = join(EXT_DIR, RRNA_REF, ORG, 'index', 'rrna', 'bowtie2', 'rrna'),
             prefix = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R%.fastq')
         threads:
             2
@@ -70,9 +70,8 @@ else:
             error = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}.rrna.bowtie2.error')
         shell:
             'bowtie2 '
-            '-1 {input.R1} '
-            '-2 {input.R2} '
-            '--un-conc {output.R1} '
+            '-U {input.R1} '
+            '--un {output.R1} '
             '-x {params.index} '
             '-p {threads} '
             '{params.args} '
@@ -83,7 +82,7 @@ else:
 
     rule rrna_filter_bbduk_universal:
         input:
-            unpack(get_contaminants_fastq)
+            unpack(get_contaminants_fastq),
             ref = join(EXT_DIR, 'JGI', 'fasta', 'ribokmers.fa.gz')
         output:
             R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}_R1.fastq'),

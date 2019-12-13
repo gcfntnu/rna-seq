@@ -104,3 +104,14 @@ def get_processed_fastq(wildcards):
     else:
         out = {'R1': R1}
     return out
+
+
+rule _filter:
+    input:
+        unpack(get_processed_fastq)
+    output:
+        temp(touch('{sample}.filtered'))
+
+rule filter_all:
+    input:
+        expand(rules._filter.output, sample=SAMPLES)
