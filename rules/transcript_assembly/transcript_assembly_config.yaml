@@ -1,4 +1,0 @@
-tx_assembly:
-  merge: fastq
-  method: scallop
-  

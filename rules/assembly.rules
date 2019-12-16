@@ -1,0 +1,44 @@
+#-*- mode:snakemake -*-
+extra_conf_fn = srcdir('assembly.config')
+if os.path.exists(extra_conf_fn):
+    with open(extra_conf_fn) as fh:
+        c  = yaml.load(fh) or {}
+        update_config2(config, c)
+
+ASSEMBLY_INTERIM = join(INTERIM_DIR, 'rnaseq', 'assembly')
+
+if not 'GCFDB_DIR' in locals():
+    GCFDB_DIR = environ.get('GCF-DB') or config.get('gcfdb_dir', '../../gcfdb')
+
+include:
+    join(GCFDB_DIR, 'reference_db.db')
+include:
+   join(GCFDB_DIR,  'spikein.db')
+include:
+    join(GCFDB_DIR, 'contaminants.db')
+include:
+    join(GCFDB_DIR, 'rrna.db')
+
+include:
+    'align.rules'
+include:
+    'assembly/genome.rules'
+include:
+    'assembly/transcriptome.rules'
+
+
+def get_genome_fasta():
+    if config['assembly']['genome']['skip']:
+        return join(REF_DIR, 'fasta', 'genome.fa')
+
+def get_gtf():
+    if config['assembly']['transcripts']['skip']:
+        return join(REF_DIR, 'genes', 'genes.gtf')
+
+def get_cdna_fasta():
+    if config['assembly']['transcripts']['skip']:
+        return join(REF_DIR, 'fasta', 'cdna.fasta')
+
+
+
+        

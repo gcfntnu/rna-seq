@@ -51,6 +51,8 @@ def update_config2(config, extra_config):
 
 TMPDIR = os.environ.get('TMPDIR', '/tmp')
 # environment variables can override config file
+GCFDB_DIR = environ.get('GCF-DB') or config.get('gcfdb_dir', 'src/gcfdb')
+GCFDB_DIR = abspath(GCFDB_DIR)
 INTERIM_DIR = environ.get('GCF-INTERIM') or config.get('interim_dir', 'data/tmp/')
 makedirs(INTERIM_DIR, exist_ok=True)
 EXT_DIR = environ.get('GCF-EXT') or config.get('ext_dir', 'data/ext')
@@ -95,11 +97,12 @@ if not 'SAMPLES' in locals():
     SAMPLES = list(config.get('samples', {}).keys())
 
 include:
-    'rules/gcfdb.rules'
+    'rules/assembly.rules'
 include:
     'rules/filter.rules'
 include:
     'rules/align.rules'
+
 include:
     'rules/quant.rules'
 include:

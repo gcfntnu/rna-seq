@@ -26,7 +26,8 @@ def get_sorted_bam(wildcards):
 def get_namesorted_bam(wildcards):
     return join(ALIGN_INTERIM, ALIGNER, wildcards.sample + '.namesorted.bam')
 
-
+include:
+    'filter.rules'
 include:
     'align/star.rules'
 include:

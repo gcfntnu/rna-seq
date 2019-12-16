@@ -47,9 +47,7 @@ def star_input_params(wildcards):
 def star_genome_dir():
     max_rlen = int(max(config['read_geometry'])) - 1
     return join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(max_rlen))
-
-
-               
+      
 rule star_firstpass:
     input:
         unpack(get_processed_fastq),
