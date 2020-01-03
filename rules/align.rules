@@ -39,7 +39,7 @@ rule _align:
     input:
         get_sorted_bam
     output:
-        temp(touch('.{sample}.alinged'))
+        temp(touch('.{sample}.aligned'))
 
 rule align_all:
     input:
