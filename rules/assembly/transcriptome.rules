@@ -7,6 +7,7 @@ if os.path.exists(extra_conf_fn):
 
 TACO_ORG_MAP = {'homo_sapiens': 'human', 'mus_musculus': 'mouse'}
 BASE_REF_DIR = config['base_ref_dir']
+ASSEMBLY_METHOD = config['assembly']['transcriptome'].get('method', 'skip')
 
 if config['assembly']['transcriptome']['merge']['type'] == 'bam':
     for k, v in config['samples'].items():
@@ -99,9 +100,9 @@ rule taco_merge:
     output:
         gtf = join(ASSEMBLY_INTERIM, '{method}', 'assembly.gtf')
     params:
-        iso_fraction = 0.05,
+        args = '--isoform-frac 0.05 --filter-min-expr 1 --filter-splice-juncs --guided-strand --guided-assembly ',
         outdir = join(ASSEMBLY_INTERIM, '{method}'),
-        expr_attr = '--gtf-expr-attr RPKM ' if  config['assembly']['transcriptome']['method'].startswith('scallop')
+        expr_attr = '--gtf-expr-attr RPKM ' if ASSEMBLY_METHOD.startswith('scallop') else ''
     threads:
         16
     singularity:
@@ -111,11 +112,8 @@ rule taco_merge:
         'taco_run '
         '-o {params.outdir} '
         '-p {threads} '
+        '--ref-gtf {input.gtf} '
         '--ref-genome-fasta {input.genome} '
-        '--isoform-frac {params.iso_fraction} '
-        '--assemble-unstranded '
-        '--filter-min-expr 1 '
-        '--filter-splice-juncs '
         '{input.assembled_gtfs} '
 
 rule taco_refcomp:
