@@ -7,6 +7,9 @@ bbduk universal or sortmerna for other organsims
 """
 from os.path import join
 
+include:
+    join(GCFDB_DIR, "sortmerna.db")
+
 RRNA_REF = config['filter']['ribosomal'].get('ref', 'ncbi')
 ORG = config['organism']
 
