@@ -45,11 +45,7 @@ def star_input_params(wildcards):
 
 def star_genome_dir():
     sjdb_rlen = int(max(config['read_geometry'])) - 1
-    guided = config['align']['star'.get(['guided_index', True)
-    if guided:
-        return join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(sjdb_rlen))
-    else:
-        
+    return join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(sjdb_rlen))
         
 rule star_align:
     input:
