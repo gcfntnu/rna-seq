@@ -19,8 +19,10 @@ include:
 include:
     join(GCFDB_DIR, 'rrna.db')
 
+BASE_REF_DIR = config['base_ref_dir']
+    
 include:
-    'align.rules'
+    'assembly/align.rules'
 include:
     'assembly/genome.rules'
 include:
@@ -34,14 +36,14 @@ def get_tx_assembly(*args):
     assembly_method = config['assembly']['transcriptome'].get('method', 'skip')
     
     if assembly_method == 'scallop_taco' or assembly_method == 'default':
-        gtf = join(ASSEMBLY_INTERIM, 'scallop', 'genes', 'ref_assembly.annotated.gtf')
-        fasta = join(ASSEMBLY_INTERIM, 'scallop', 'fasta', 'transcriptome.fa')
+        gtf = join(ASSEMBLY_INTERIM, 'scallop_taco', 'assembly.refcomp.gtf')
+        fasta = join(ASSEMBLY_INTERIM, 'scallop_taco', 'fasta', 'transcriptome.fa'),
     elif assembly_method == 'stringtie_taco':
-        gtf = join(ASSEMBLY_INTERIM, 'taco', 'genes', 'assembly.refcomp.gtf'),
-        fasta = join(ASSEMBLY_INTERIM, 'taco', 'fasta', 'transcriptome.fa')
+        gtf = join(ASSEMBLY_INTERIM, 'stringtie_taco', 'genes', 'assembly.refcomp.gtf'),
+        fasta = join(ASSEMBLY_INTERIM, 'stringtie_taco', 'fasta', 'transcriptome.fa')
     elif assembly_method == 'stringtie':
-        gtf = join(ASSEMBLY_INTERIM, 'taco', 'genes', 'assembly.refcomp.gtf'),
-        fasta = join(ASSEMBLY_INTERIM, 'taco', 'fasta', 'transcriptome.fa')
+        gtf = join(ASSEMBLY_INTERIM, 'strintie', 'genes', 'assembly.refcomp.gtf'),
+        fasta = join(ASSEMBLY_INTERIM, 'stringtie', 'fasta', 'transcriptome.fa')
     elif assembly_method == 'psiclass':
         gtf = join(ASSEMBLY_INTERIM, 'psiclass', 'genes', 'assembly.refcomp.gtf'),
         fasta = join(ASSEMBLY_INTERIM, 'psiclass', 'fasta', 'transcriptome.fa')
@@ -76,11 +78,15 @@ rule assembled_genome:
         unpack(get_genome_assembly)
     output:
         genome = join(REF_DIR, 'fasta', 'genome.fa'),
-        genome_index = directory(join(REF_DIR, 'fasta', 'genome.fa.fai')),
-        index = directory(join(REF_DIR, 'index'))
+        genome_index = join(REF_DIR, 'fasta', 'genome.fa.fai')
+    params:
+        fasta_dir = join(REF_DIR, 'fasta'),
+        index_dir = join(REF_DIR, 'index')
     shell:
         """
-        ln -sr {input.genome} {output.genome}
-        ln -sr {input.genome_index} {output.genome_index}
-        ln -sr {input.index}/genome* {output.index}/index
+        mkdir -p {params.fasta_dir}
+        mkdir -p {params.index_dir}
+        ln -srf {input.genome} {output.genome}
+        ln -srf {input.genome_index} {output.genome_index}
+        ln -srf {input.index}/genome {params.index_dir}/genome
         """

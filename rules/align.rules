@@ -7,7 +7,7 @@ HISAT2
 
 
 """
-import os
+
 
 ALIGN_INTERIM = join(INTERIM_DIR, 'rnaseq', 'align')
 ALIGN_PROCESSED = join(PROCESSED_DIR, 'rnaseq', 'align')

@@ -8,6 +8,7 @@ bbduk universal or sortmerna for other organsims
 from os.path import join
 
 RRNA_REF = config['filter']['ribosomal'].get('ref', 'ncbi')
+ORG = config['organism']
 
 def get_contaminants_fastq(wildcards):
    q = config['filter']['contaminants']['quantifier']

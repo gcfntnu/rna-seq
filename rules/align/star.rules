@@ -26,7 +26,6 @@ if os.path.exists(extra_conf_fn):
         update_config2(config, c)
 
 STAR_INTERIM = join(ALIGN_INTERIM, 'star')
-STAR_PROCESSED = join(ALIGN_PROCESSED, 'star')
 
 def star_input_params(wildcards):
     """Multiple fastq files per sample workaround.
@@ -45,134 +44,41 @@ def star_input_params(wildcards):
     return input_string
 
 def star_genome_dir():
-    max_rlen = int(max(config['read_geometry'])) - 1
-    return join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(max_rlen))
-      
-rule star_firstpass:
+    sjdb_rlen = int(max(config['read_geometry'])) - 1
+    guided = config['align']['star'.get(['guided_index', True)
+    if guided:
+        return join(REF_DIR, 'index', 'genome', 'star', 'r_{}'.format(sjdb_rlen))
+    else:
+        
+        
+rule star_align:
     input:
         unpack(get_processed_fastq),
-        genome = join(star_genome_dir(), 'SA')
+        genome = join(star_genome_dir(), 'SA'),
+        gtf = join(REF_DIR, 'genes', 'genes.gtf')
     params:
-        prefix = lambda wildcards, output: output[0].split('SJ.out.tab')[0],
         fastq = star_input_params,
-        genome_dir = star_genome_dir()
+        prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
+        genome_dir = star_genome_dir(),
+        args = config['align']['star']['args']
     output:
-        sj = join(STAR_INTERIM, '{sample}.firstpass.SJ.out.tab')
-    shadow:
-        'shallow'
+        bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
     threads:
         48
+    log:
+        'logs/{sample}/{sample}.Log.final.out'
     singularity:
         'docker://' + config['docker']['star']
     shell: 
         'STAR '
         '--runThreadN {threads} '
         '--genomeDir {params.genome_dir} '
-        '--genomeLoad LoadAndKeep '
-        '--outFilterType BySJout '
-        '--outSAMtype None '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {params.fastq} '
-
-rule star_collect_1pass_junctions:
-    input:
-        junctions = expand(rules.star_firstpass.output, sample=SAMPLES)
-    params:
-        script = srcdir('scripts/sjCollapseSamples.awk')
-    output:
-        temp(join(STAR_INTERIM, 'SJ.out.firstpass.tab'))
-    shell:
-        'awk -f {params.script} {input.junctions} | sort -k1,1V -k2,2n -k3,3n > {output}'
-
-rule star_clean_memory_1pass:
-    input:
-        rules.star_collect_1pass_junctions.output
-    params:
-        star_genome_dir()
-    output:
-        temp(touch('.star.mem.1pass.cleaned'))
-    singularity:
-        'docker://' + config['docker']['star']                
-    priority:
-        0
-    shell:
-        'STAR '
-        '--genomeDir {params} '
-        '--genomeLoad Remove '
-        '--outFileNamePrefix /tmp/foo '
-        '|| echo "NO firstpass STAR SHARED MEMORY" '
-        
-rule star_filter_junctions:
-    input:
-        sj = join(STAR_INTERIM, 'SJ.out.firstpass.tab'),
-        mem = '.star.mem.1pass.cleaned'
-    params:
-        script = srcdir('scripts/filter_junctions.py'),
-        args = '--min-unique-mappers 50 --max-overhang 20 --samples_detected 10 --verbose '
-    output:
-        sj = join(STAR_INTERIM, 'SJ.out.filtered.tab')
-    shell:
-        'python {params.script} {params.args} {input.sj} > {output}'
-    
-if config['align']['star']['twopass']:
-    rule star_align:
-        input:
-            unpack(get_processed_fastq),
-            genome = join(star_genome_dir(), 'SA'),
-            sj = expand(rules.star_firstpass.output, sample=SAMPLES),
-            mem = '.star.mem.1pass.cleaned'
-        params:
-            fastq = star_input_params,
-            prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
-            genome_dir = star_genome_dir(),
-            args = config['align']['star']['args']
-        output:
-            bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
-        threads:
-            48
-        log:
-            'logs/{sample}/{sample}.Log.final.out'
-        singularity:
-            'docker://' + config['docker']['star']
-        shell: 
-            'STAR '
-            '--runThreadN {threads} '
-            '--genomeDir {params.genome_dir} '
-            '--outFileNamePrefix {params.prefix} '
-            '--readFilesIn {params.fastq} '
-            '--sjdbFileChrStartEnd {input.sj} '
-            '--twopassMode None '
-            '{params.args} '
-            '&& '
-            'cp {params.prefix}Log.final.out {log} '
-else:
-    rule star_align:
-        input:
-            unpack(get_processed_fastq),
-            genome = join(star_genome_dir(), 'SA')
-        params:
-            fastq = star_input_params,
-            prefix = lambda wildcards, output: output.bam.split('Aligned.sortedByCoord.out.bam')[0],
-            genome_dir = star_genome_dir(),
-            args = config['align']['star']['args']
-        output:
-            bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
-        threads:
-            48
-        log:
-            'logs/{sample}/{sample}.Log.final.out'
-        singularity:
-            'docker://' + config['docker']['star']
-        shell: 
-            'STAR '
-            '--runThreadN {threads} '
-            '--genomeDir {params.genome_dir} '
-            '--outFileNamePrefix {params.prefix} '
-            '--readFilesIn {params.fastq} '
-            '--genomeLoad LoadAndKeep '
-            '{params.args} '
-            '&& '
-            'cp {params.prefix}Log.final.out {log} '
+        '--sjdbGTF {input.gtf} '
+        '{params.args} '
+        '&& '
+        'cp {params.prefix}Log.final.out {log} '
 
 rule star_all:
     input:

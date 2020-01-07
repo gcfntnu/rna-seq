@@ -44,9 +44,9 @@ if not 'SAMPLES' in locals():
     SAMPLES = list(config.get('samples', {}).keys())
 
 include:
-    'rules/assembly.rules'
-include:
     'rules/filter.rules'
+include:
+    'rules/assembly.rules'
 include:
     'rules/align.rules'
 include:

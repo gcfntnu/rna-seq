@@ -32,10 +32,10 @@ else:
 
 def hisat2_input(wildcards):
     fastq = get_processed_fastq(wildcards)
-    print(fastq)
     sample = config['samples'][wildcards.sample]
     PE = sample.get('paired_end') or len(config['read_geometry']) > 1
     R1 = fastq['R1']
+    R2 = fastq.get('R2', [])
     if PE:
         input = '-1 ' + ','.join(R1)
         R2 = fastq.get('R2', [])
