@@ -34,7 +34,7 @@ rule picard_mark_duplicates:
     threads:
         8
     singularity:
-        'docker://gcfntnu/picard:2.18'
+        'docker://' + config['docker']['picard_gatk']
     shell:
         'picard MarkDuplicates '
         '{params.java_opt} '
@@ -56,6 +56,6 @@ rule bam_namesort:
     threads:
         8
     singularity:
-        'docker://quay.io/biocontainers/sambamba:0.7.0--h89e63da_0'
+        'docker://' + config['docker']['sambamba']
     shell:
         'sambamba sort -N -p -m 24G -t 8 -o {output} {input.bam}'

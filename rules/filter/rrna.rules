@@ -92,7 +92,7 @@ else:
             R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}_R1.fastq'),
             counts = join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}.counts')
         singularity:
-            'docker://quay.io/biocontainers/bbduk'
+            'docker://' + config['docker']['bbmap']
         log:
             join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}.rrna.bbduk.log') 
         threads:
@@ -114,7 +114,7 @@ else:
             args = '--fastx --sam ',
             ref = ':'.join([','.join(i) for i in zip(expand(join(EXT_DIR, 'sortmerna', 'fasta', '{db}.fasta'), db=SMDB), expand(join(EXT_DIR, 'sortmerna', 'index', '{db}.idx'), db=SMDB))])
         singularity:
-            'docker://flatberg/filter:0.1'
+            'docker://' + config['docker']['sortmerna']
         shell:
             'sortmerna '
             '--reads {input.R1} '

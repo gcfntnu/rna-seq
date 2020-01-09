@@ -22,7 +22,7 @@ rule sambamba_mark_duplicates:
     threads:
         2
     singularity:
-        'docker://quay.io/biocontainers/sambamba:0.7.0--h89e63da_0'
+        'docker://' + config['docker']['sambamba']
     shell:
         'sambamba markdup -t {threads} {input.bam} {output.bam} ; sambamba index -t {threads} {output.bam}'
 
