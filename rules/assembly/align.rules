@@ -105,6 +105,7 @@ rule assembly_hisat2_align:
         '--rna-strandness {params.strand} '
         '-x {params.index} '
         '{params.input} '
+        '--dta --mm '
         '-S {output.sam} '
 
 rule assembly_hisat2_sorted_bam:

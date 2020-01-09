@@ -14,7 +14,6 @@ if os.path.exists(extra_conf_fn):
         update_config2(config, c)
 
 HISAT_INTERIM = join(ALIGN_INTERIM, 'hisat2')
-HISAT_PROCESSED = join(ALIGN_PROCESSED, 'hisat2')
 
 PE = len(config['read_geometry']) > 1
 KIT_STRAND = LIBPREP.get('strand', 'reverse')
@@ -69,7 +68,6 @@ rule hisat2_align:
         '--rna-strandness {params.strand} '
         '--summary-file {log} '
         '--new-summary '
-        '--met-file test.log'
         '-p {threads} '
         '--un-conc-gz {params.unaligned} '
         '-x {params.index} '

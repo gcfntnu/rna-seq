@@ -71,7 +71,6 @@ rule star_align:
         '--genomeDir {params.genome_dir} '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {params.fastq} '
-        '--sjdbGTF {input.gtf} '
         '{params.args} '
         '&& '
         'cp {params.prefix}Log.final.out {log} '

@@ -35,7 +35,7 @@ if PE:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             'cat {input} | fastp --stdin --interleaved_in -o {output.R1} -O {output.R2} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} '
 
@@ -56,7 +56,7 @@ if PE:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} '
 
@@ -95,7 +95,7 @@ if PE:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             'fastp -i {input.R1} -I {input.R2} -o {output.R1} -O {output.R2} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} '
 
@@ -116,7 +116,7 @@ else:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             ' zcat {input} | fastp --stdin -o {output.R1} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} '
 
@@ -136,7 +136,7 @@ else:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             'fastp -i {input.R1} -o {output.R1} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} '
             
@@ -154,7 +154,7 @@ else:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             ' zcat {input} | fastp --stdin -o {output.R1} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} '
 
@@ -172,6 +172,6 @@ else:
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
-            'docker://quay.io/biocontainers/fastp:0.19.7--hdbcaa40_0'
+            'docker://' + config['docker']['fastp']
         shell:
             'fastp -i {input.R1} -o {output.R1} -j {output.log_json} -h {output.log_html} --thread {threads} {params} && cp {output.log_json} {log.json} ' 
