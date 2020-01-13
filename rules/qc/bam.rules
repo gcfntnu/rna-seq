@@ -170,14 +170,14 @@ rule preseq_lc_extrap:
         log = join(PRESEQ_QCDIR, '{sample}.ccurve.txt'),
         log2 = 'logs/{sample}/{sample}.ccurve.txt'
     params:
-        '-P -seg_len 9000000 ' if len(config['read_geometry']) > 1 else ' '
+        '-P -seg_len 9000000 ' if len(config['read_geometry']) > 1 else ''
     singularity:
         'docker://' + config['docker']['preseq']
     threads:
         1
     shell:
         """
-        preseq lc_extrap -B {input.bam} -Q {params} -o {output}
+        preseq lc_extrap -B {input.bam} {params} -o {output}
         cp {output.log} {output.log2}
         """
 
