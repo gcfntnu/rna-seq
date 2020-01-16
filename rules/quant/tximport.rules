@@ -135,7 +135,7 @@ rule tximport_transcript_tpm:
         '--output {output} '
         '{input.rds} '      
 
-rule tximport_tx_vst:
+rule tximport_transcript_vst:
     input:
         rds = join(QUANT_INTERIM, '{quant}', 'tximport', 'tx_{quant}.rds'),
         txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')
@@ -152,7 +152,7 @@ rule tximport_tx_vst:
         '--output {output} '
         '{input.rds} '
 
-rule tximport_tx_rlog:
+rule tximport_transcript_rlog:
     input:
         rds = join(QUANT_INTERIM, '{quant}', 'tximport', 'tx_{quant}.rds'),
         txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')

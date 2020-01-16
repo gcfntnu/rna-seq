@@ -74,7 +74,7 @@ if (args$type == "gene"){
     R <- rlog(dds)
     out <- assay(R)
 } else if (args$type == "tx_vst"){
-    samples <- data.frame(row.names=colnames(counts))
+    samples <- data.frame(row.names=colnames(txi.tx$counts))
     dds <-DESeqDataSetFromMatrix(round(txi.tx$counts),colData=samples, design = ~1)
     dds <- estimateSizeFactors(dds)
     vsd <- varianceStabilizingTransformation(dds)

@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 def pca(E, max_comp=20):
     x = E.values
@@ -24,10 +25,7 @@ def pca(E, max_comp=20):
 def pairs_scores(T, S=None, n_comp=4):
     n_comp = min(T.shape[1], n_comp)
     T = T.iloc[:,:n_comp]
-    print(T.head())
-    print(S.head())
     df = pd.concat([T, S], axis='columns')
-    print(df.head())
     sns.set(style="ticks")
     hue = 'Sample_Group' if 'Sample_Group' in df.columns else None
     ax = sns.pairplot(df, hue=hue)
@@ -61,5 +59,6 @@ if __name__ == '__main__':
         
     T, P = pca(E.T)
     p = pairs_scores(T, S)
-    p.set_title('PCA on variance transformed gene expression data')
+    plt.subplots_adjust(top=0.9)
+    p.fig.suptitle('PCA on variance transformed gene expression data')
     p.savefig(args.output)
