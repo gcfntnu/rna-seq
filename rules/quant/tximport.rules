@@ -168,3 +168,39 @@ rule tximport_transcript_rlog:
         '--txinfo {input.txinfo} '
         '--output {output} '
         '{input.rds} '
+
+rule tximport_gene_info:
+    input:
+        rds = join(QUANT_INTERIM, '{quant}', 'tximport', 'tx_{quant}.rds'),
+        txinfo = join(REF_DIR, 'genes', 'transcripts.tsv'),
+        gene_info = join(REF_DIR, 'genes', 'genes.tsv')
+    params:
+        script = srcdir('scripts/tximport2csv.R')
+    singularity:
+        'docker://' + config['docker']['tximport']
+    output:
+        join(QUANT_INTERIM, '{quant}', 'tximport', 'gene_info.tsv')
+    shell:
+        'Rscript {params.script} '
+        '--type gene_info '
+        '--txinfo {input.txinfo} '
+        '--geneinfo {input.gene_info} '
+        '--output {output} '
+        '{input.rds} '
+        
+rule tximport_transcript_info:
+    input:
+        rds = join(QUANT_INTERIM, '{quant}', 'tximport', 'tx_{quant}.rds'),
+        txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')
+    params:
+        script = srcdir('scripts/tximport2csv.R')
+    singularity:
+        'docker://' + config['docker']['tximport']
+    output:
+        join(QUANT_INTERIM, '{quant}', 'tximport', 'transcript_info.tsv')
+    shell:
+        'Rscript {params.script} '
+        '--type tx_info '
+        '--txinfo {input.txinfo} '
+        '--output {output} '
+        '{input.rds} '
