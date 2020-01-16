@@ -36,7 +36,8 @@ rule bfq_exprs:
         transcript_counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'transcript_counts.tsv'),
         transcript_vst = join(QUANT_INTERIM, 'salmon', 'tximport', 'transcript_vst.tsv'),
         transcript_tpm = join(QUANT_INTERIM, 'salmon', 'tximport', 'transcript_tpm.tsv'),
-        gene_info = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_info.tsv')
+        gene_info = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_info.tsv'),
+        tx_info = join(QUANT_INTERIM, 'salmon', 'tximport', 'transcript_info.tsv')
     params:
         outdir = join(BFQ_INTERIM, 'exprs')
     output:
@@ -47,7 +48,8 @@ rule bfq_exprs:
         transcript_counts = join(BFQ_INTERIM, 'exprs', 'transcript_counts.tsv'),
         transcript_vst = join(BFQ_INTERIM, 'exprs', 'transcript_vst.tsv'),
         transcript_tpm = join(BFQ_INTERIM, 'exprs', 'transcript_tpm.tsv'),
-        gene_info = join(BFQ_INTERIM, 'exprs', 'gene_info.tsv')
+        gene_info = join(BFQ_INTERIM, 'exprs', 'gene_info.tsv'),
+        tx_info = join(BFQ_INTERIM, 'exprs', 'transcript_info.tsv')
     run:
         for fn in input:
             shell('ln -sr -t {params.outdir} {fn}')
