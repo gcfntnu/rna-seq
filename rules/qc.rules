@@ -44,6 +44,7 @@ else:
             expand(rules.qorts.output, sample=SAMPLES),
             expand(rules.qualimap_rnaseq.output, sample=SAMPLES),
             expand(rules.salmon_meta_info.output, sample=SAMPLES)
+        
             
 include:
     'qc/multiqc.rules'

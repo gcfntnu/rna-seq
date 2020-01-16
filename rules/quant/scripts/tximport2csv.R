@@ -1,9 +1,9 @@
 #/usr/bin/env Rscript
 
-
-library(argparse)
-library(tximport)
-library(readr)
+suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(tximport))
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(DESeq2))
 
 
 parser <- ArgumentParser(description="tximport obj csv export")
@@ -14,7 +14,7 @@ parser$add_argument("--txinfo", required=TRUE,
                     help="Transcript info (required). Tab delimited file, needs columns with `gene_id`, `transcript_id`")
 
 parser$add_argument("-t", "--type", type="character", default="gene",
-                    help="csv count output option (gene, gene_tpm, gene_tpm_scaled, gene_tpm_length_scaled, tx, tx_tpm, tx_tpm_scaled, gene_length, variances)")
+                    help="csv count output option (gene, gene_tpm, gene_tpm_scaled, gene_tpm_length_scaled, gene_rlog, gene_vst, tx, tx_tpm, tx_tpm_scaled, tx_rlog, tx_vst, gene_length, variances)")
 
 parser$add_argument("-o", "--output", required=TRUE, help="Output tsv file")
 
@@ -22,43 +22,73 @@ parser$add_argument("-v", "--verbose", action="store_true", default=FALSE, help=
 
 args <- parser$parse_args(args=commandArgs(TRUE))
 
-tx.info <- readr::read <- tsv(args$txinfo)
+if (args$verbose==TRUE){
+    print(args)
+    options(echo=TRUE)
+}
+
+tx.info <- read.table(args$txinfo, sep="\t", header=TRUE)
 tx2gene <- tx.info[,c("transcript_id", "gene_id")]
 
 txi.tx <- readRDS(args$input)
 
 if (args$type == "gene"){
     out <- summarizeToGene(txi.tx, tx2gene)$counts
-} else if (args.type == "gene_tpm"){
+} else if (args$type == "gene_tpm"){
     out <- summarizeToGene(txi.tx, tx2gene)$abundance
-} else if (args.type == "gene_tpm_scaled"){
+} else if (args$type == "gene_tpm_scaled"){
     out <- summarizeToGene(txi.tx, tx2gene, countsFromAbundance="scaledTPM")$counts
-} else if (args.type == "gene_tpm_length_scaled"){
+} else if (args$type == "gene_tpm_length_scaled"){
     out <- summarizeToGene(txi.tx, tx2gene, countsFromAbundance="lengthScaledTPM")$counts
-} else if (args.type == "gene_length"){
+} else if (args$type == "gene_length"){
     out <- summarizeToGene(txi.tx, tx2gene)$length
-} else if (args.type == "tx"){
+} else if (args$type == "tx"){
     out <- txi.tx$counts
-} else if (args.type == "tx_tpm"){
+} else if (args$type == "tx_tpm"){
     out <- txi.tx$abundance
-} else if (args.type == "tx_tpm_scaled"){
+} else if (args$type == "tx_tpm_scaled"){
     length4CFA <- tximport:::medianLengthOverIsoform(txi.tx$length, tx2gene)
     out <- tximport:::makeCountsFromAbundance(countsMat = txi.tx$counts, 
                                               abundanceMat = txi.tx$abundance,
                                               lengthMat=length4CFA,
                                               countsFromAbundance = "lengthScaledTPM") 
-} else if (args.type == "tx_length"){
+} else if (args$type == "tx_length"){
     out <- txi.tx$length
-} else if (args.type == "variances"){
-    if (! args.type in c("salmon", "kallisto")){
+} else if (args$type == "variances"){
+    if (! args$type %in% c("salmon", "kallisto")){
         stop("only salmon, kallisto estimate variances!")
         }
     out <- summarizeToGene(txi.tx, tx2gene, varReduce=TRUE)$variance
+}  else if (args$type == "gene_vst"){
+    counts <- summarizeToGene(txi.tx, tx2gene)$counts
+    samples <- data.frame(row.names=colnames(counts))
+    dds <-DESeqDataSetFromMatrix(round(counts), colData=samples, design = ~1)
+    dds <- estimateSizeFactors(dds)
+    vsd <- varianceStabilizingTransformation(dds)
+    out <- assay(vsd)
+} else if (args$type == "gene_rlog"){
+    counts <- summarizeToGene(txi.tx, tx2gene)$counts
+    samples <- data.frame(row.names=colnames(counts))
+    dds <-DESeqDataSetFromMatrix(round(counts), colData=samples, design = ~1)
+    dds <- estimateSizeFactors(dds)
+    R <- rlog(dds)
+    out <- assay(R)
+} else if (args$type == "tx_vst"){
+    samples <- data.frame(row.names=colnames(counts))
+    dds <-DESeqDataSetFromMatrix(round(txi.tx$counts),colData=samples, design = ~1)
+    dds <- estimateSizeFactors(dds)
+    vsd <- varianceStabilizingTransformation(dds)
+    out <- assay(vsd)
+} else if (args$type == "tx_rlog"){
+    samples <- data.frame(row.names=colnames(txi.tx$counts))
+    dds <-DESeqDataSetFromMatrix(round(txi.tx$counts), colData=samples, design = ~1)
+    dds <- estimateSizeFactors(dds)
+    R <- rlog(dds)
+    out <- assay(R)
 }
 
 
-
-write_tsv(out, args$output, delim="\t")
+write.table(as.data.frame(out), file=args$output, sep="\t", quote=FALSE)
 
 
 

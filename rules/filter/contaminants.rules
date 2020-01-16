@@ -46,15 +46,6 @@ rule contaminants_fasta:
     shell:
         'cat {input} > {output}'
 
-rule contaminants_unitas:
-    input:
-        rules.contaminants_fasta.output
-    params:
-        script = srcdir('scripts/contaminants_unitas.py')
-    output:
-        temp(join(INTERIM_DIR, 'contaminants', 'fasta', '_contaminants_unitas_formatted.fa'))
-    shell:
-        'python {params.script} {input} > {output}'
 
 if PE:      
    rule contaminants_filter_bowtie2:

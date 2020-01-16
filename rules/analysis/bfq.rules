@@ -1,0 +1,30 @@
+rule bfq_pca:
+    input:
+        exprs = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_vst.tsv'),
+        sample_info = 'data/processed/sample_info.tsv'
+    params:
+        script = srcdir('scripts/plotpca.py')
+    output:
+        join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_vst_pca_mqc.png'),
+    shell:
+        'python {params.script} {input.exprs} --sample-info {input.sample_info} --output {output}'
+
+if len(config['read_geometry']) > 1:
+    rule bfq_qc:
+        input:
+            rules.align_all.input,
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.picard_insertsize.output, sample=SAMPLES),
+            expand(rules.salmon_flendist.output, sample=SAMPLES),
+            expand(rules.salmon_meta_info.output, sample=SAMPLES)
+else:
+    rule bfq_qc:
+        input:
+            rules.align_all.input,
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.salmon_meta_info.output, sample=SAMPLES)
+
+rule bfq_all:
+    input:
+        pca_fig = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_vst_pca_mqc.png'),
+        qc = rules.bfq_qc.input

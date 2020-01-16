@@ -60,7 +60,8 @@ rule gatk_varcall:
         bam = join(VARCALL_INTERIM, '{sample}.bam.split'),
         genome = join(REF_DIR, 'fasta', 'genome.fa')
     output:
-        vcf = join(VARCALL_INTERIM, '{sample}_all.vcf')
+        vcf = join(VARCALL_INTERIM, '{sample}_all.vcf'),
+        bam = join(VARCALL_INTERIM, '{sample}.bam')
     params:
         '-stand-call-conf 10.0 '
     singularity:
@@ -69,9 +70,11 @@ rule gatk_varcall:
         48
     shell:
         'gatk HaplotypeCaller '
+        '--native-pair-hmm-threads {threads} '
         '-R {input.genome} '
         '-I {input.bam} '
         '-O {output.vcf} '
+        '-bamout {output.bam} '
 
         
 rule gatk_var_filter:

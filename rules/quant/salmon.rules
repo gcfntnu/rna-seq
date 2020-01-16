@@ -7,8 +7,8 @@ Dependencies
 SALMON, https://combine-lab.github.io/salmon/
 
 """
-
-from os.path import join
+include:
+    'tximport.rules'
 
 extra_conf_fn = srcdir('salmon.config')
 if os.path.exists(extra_conf_fn):
@@ -132,7 +132,7 @@ rule salmon_unmapped_fastq:
         '{params.args} '
         '-o {params.prefix} '
 
-rule salmon_quant:
+rule salmon_tximport:
     input:
         files = expand(join(SALMON_INTERIM, '{sample}', 'quant.sf'), sample=SAMPLES),
         txinfo = join(REF_DIR, 'genes', 'transcripts.tsv')
@@ -141,9 +141,18 @@ rule salmon_quant:
     singularity:
         'docker://' + config['docker']['tximport']
     output:
-        rds = join(QUANT_INTERIM, 'salmon', 'tximport', 'dat.rds')
+        rds = join(QUANT_INTERIM, 'salmon', 'tximport', 'tx_salmon.rds')
     shell:
         'Rscript {params.script} {input.files} '
         '--txinfo {input.txinfo} '
         '-t salmon '
         '-o {output} '
+
+rule salmon_quant:
+    input:
+        gene_counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
+        gene_tpm = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm.tsv'),
+        gene_abundance = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm_length_scaled.tsv'),
+        gene_vst = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_vst.tsv'),
+        tx_counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'transcript_counts.tsv'),
+        tx_tpm = join(QUANT_INTERIM, 'salmon', 'tximport', 'transcript_tpm.tsv')
