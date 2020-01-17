@@ -57,7 +57,7 @@ include:
 
 rule sample_info:
     output:
-        'data/processed/sample_info.tsv'
+        join(INTERIM_DIR, 'sample_info.tsv')
     singularity:
         'docker://gcfntnu/python-base:3.7'
     params:

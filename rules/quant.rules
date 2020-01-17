@@ -20,7 +20,6 @@ if os.path.exists(extra_conf_fn):
         update_config2(config, c)
         
 QUANT_INTERIM = join(INTERIM_DIR, 'rnaseq', 'quant')
-QUANT_PROCESSED = join(PROCESSED_DIR, 'rnaseq', 'quant')
 
 include:
     'filter.rules'
