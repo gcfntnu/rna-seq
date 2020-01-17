@@ -6,6 +6,8 @@ rule bfq_pca:
         sample_info = 'data/processed/sample_info.tsv'
     params:
         script = srcdir('scripts/plotpca.py')
+    singularity:
+        'docker://' + config['docker']['bfq_plot']
     output:
         join(BFQ_INTERIM, 'figs', 'gene_vst_pca_mqc.png'),
     shell:

@@ -11,6 +11,15 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+
+
+def var_filter(E, f=0.5):
+    E = E.loc[E.sum(1)>10,:]
+    o = E.var(axis=1).argsort()[::-1]
+    n = int(np.floor(E.shape[0] * f))  
+    E = E.iloc[o[:n],:]
+    return E
+
 def pca(E, max_comp=20):
     x = E.values
     max_comp = min(max_comp, min(x.shape))
@@ -56,8 +65,9 @@ if __name__ == '__main__':
         if not E.index.isin(F.index).all():
             warnings.warn('missing annotations in feature info!')
         F = F.loc[E.index,:]   
-        
-    T, P = pca(E.T)
+
+    F = var_filter(E)
+    T, P = pca(F.T)
     p = pairs_scores(T, S)
     plt.subplots_adjust(top=0.9)
     p.fig.suptitle('PCA on variance transformed gene expression data')
