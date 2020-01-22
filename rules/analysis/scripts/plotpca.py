@@ -80,8 +80,10 @@ if __name__ == "__main__":
     args = argparser()
 
     E = pd.read_csv(args.exprs, sep="\t", index_col=0)
+    E.columns = E.columns.astype(str)
     if args.samples is not None:
         S = pd.read_csv(args.samples, sep="\t", index_col=0)
+        S.index = S.index.astype(str)
         if not E.columns.isin(S.index).all():
             raise ValueError("missing samples in sample info!")
         S = S.loc[E.columns, :]
