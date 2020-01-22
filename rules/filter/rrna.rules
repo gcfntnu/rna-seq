@@ -28,8 +28,8 @@ if PE:
             unpack(get_contaminants_fastq),
             index = join(EXT_DIR, RRNA_REF, ORG, 'index', 'rrna', 'bowtie2', 'rrna.1.bt2')
         output:
-            R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R2.fastq'),
+            R1 = temp(join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R1.fastq')),
+            R2 = temp(join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R2.fastq')),
             counts = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}.counts')
         singularity:
             'docker://' + config['docker']['bowtie2_samtools']
@@ -60,7 +60,7 @@ else:
             unpack(get_contaminants_fastq),
             index = join(EXT_DIR, RRNA_REF, ORG, 'index', 'rrna', 'bowtie2', 'rrna.1.bt2')
         output:
-            R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R1.fastq'),
+            R1 = temp(join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}_R1.fastq')),
             counts = join(FILTER_INTERIM, '{merge}', 'rrna', 'bowtie2', '{sample}.counts')
         singularity:
             'docker://' + config['docker']['bowtie2_samtools']
@@ -89,7 +89,7 @@ else:
             unpack(get_contaminants_fastq),
             ref = join(EXT_DIR, 'JGI', 'fasta', 'ribokmers.fa.gz')
         output:
-            R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}_R1.fastq'),
+            R1 = temp(join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}_R1.fastq')),
             counts = join(FILTER_INTERIM, '{merge}', 'rrna', 'bbduk_universal', '{sample}.counts')
         singularity:
             'docker://' + config['docker']['bbmap']
@@ -108,7 +108,7 @@ else:
             R1 = unpack(get_contaminants_fastq),
             ref = expand(join(EXT_DIR, 'sortmerna', 'index', '{db}.idx.stats'), db=SMDB)
         output:
-            fastq = join(FILTER_INTERIM, '{merge}', 'rrna', 'sortmerna', '{sample}_R1.fastq'),
+            fastq = temp(join(FILTER_INTERIM, '{merge}', 'rrna', 'sortmerna', '{sample}_R1.fastq')),
             counts = join(FILTER_INTERIM, '{merge}', 'rrna', 'sortmerna', '{sample}.counts')
         params:
             args = '--fastx --sam ',
@@ -125,6 +125,6 @@ rule rrna_filter_skip:
     input:
         R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', config['filter']['contaminants']['quantifier'], '{sample}_R{readnum}.fastq')
     output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'rrna', 'skip', '{sample}_R{readnum}.fastq')
+        R1 = temp(join(FILTER_INTERIM, '{merge}', 'rrna', 'skip', '{sample}_R{readnum}.fastq'))
     shell:
         'cp -f {input} {output}'

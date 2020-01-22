@@ -22,8 +22,8 @@ if PE:
         input:
             rules.fastp_interleave_fastq.output
         output:
-            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R2.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq')),
+            R2 = temp(join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R2.fastq')),
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         threads:
@@ -43,8 +43,8 @@ if PE:
         input:
             unpack(get_raw_fastq)
         output:
-            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R2.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq')),
+            R2 = temp(join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R2.fastq')),
             log_html = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         params:
@@ -64,8 +64,8 @@ if PE:
         input:
             join(FILTER_INTERIM, 'interleaved_fastq', '{sample}.fastq')
         output:
-            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip' '{sample}_R2.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip', '{sample}_R1.fastq')),
+            R2 = temp(join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip' '{sample}_R2.fastq')),
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         threads:
@@ -83,8 +83,8 @@ if PE:
         input:
             unpack(get_raw_fastq)
         output:
-            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip', '{sample}_R1.fastq'),
-            R2 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip' '{sample}_R2.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip', '{sample}_R1.fastq')),
+            R2 = temp(join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip' '{sample}_R2.fastq')),
             log_html = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         params:
@@ -104,7 +104,7 @@ else:
         input:
             unpack(get_raw_fastq)
         output:
-            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', '{sample}_R1.fastq')),
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')           
         threads:
@@ -124,7 +124,7 @@ else:
         input:
             unpack(get_raw_fastq)
         output:
-            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', '{sample}_R1.fastq')),
             log_html = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         threads:
@@ -144,7 +144,7 @@ else:
         input:
             unpack(get_raw_fastq)
         output:
-            R1 = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip', '{sample}_R1.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'skip', '{sample}_R1.fastq')),
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')               
         threads:
@@ -162,7 +162,7 @@ else:
         input:
             unpack(get_raw_fastq)
         output:
-            R1 = join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip', '{sample}_R1.fastq'),
+            R1 = temp(join(FILTER_INTERIM, 'fastq', 'trimmed', 'skip', '{sample}_R1.fastq')),
             log_html = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         params:

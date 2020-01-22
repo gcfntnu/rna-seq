@@ -53,8 +53,8 @@ if PE:
            unpack(get_spikein_fastq),
            index = join(INTERIM_DIR, 'contaminants', 'index', 'contaminants', 'bowtie2', 'contaminants.1.bt2')
        output:
-           R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}_R1.fastq'),
-           R2 = join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}_R2.fastq'),
+           R1 = temp(join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}_R1.fastq')),
+           R2 = temp(join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}_R2.fastq')),
            counts = join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}.counts')
        singularity:
            'docker://' + config['docker']['bowtie2_samtools']
@@ -85,7 +85,7 @@ else:
            unpack(get_spikein_fastq),
            index = join(INTERIM_DIR, 'contaminants', 'index', 'contaminants', 'bowtie2', 'contaminants.1.bt2')
        output:
-           R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}_R1.fastq'),
+           R1 = temp(join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}_R1.fastq')),
            counts = join(FILTER_INTERIM, '{merge}', 'contaminants', 'bowtie2', '{sample}.counts')
        singularity:
            'docker://' + config['docker']['bowtie2_samtools']
@@ -112,6 +112,6 @@ rule contaminants_filter_skip:
     input:
         R1 = join(FILTER_INTERIM, '{merge}', 'spikein', config['filter']['spikein']['quantifier'], '{sample}_R{readnum}.fastq')
     output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'contaminants', 'skip', '{sample}_R{readnum}.fastq')
+        R1 = temp(join(FILTER_INTERIM, '{merge}', 'contaminants', 'skip', '{sample}_R{readnum}.fastq'))
     shell:
         'cp -f {input} {output} '

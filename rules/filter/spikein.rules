@@ -28,8 +28,8 @@ if PE:
            unpack(get_trimmed_fastq),
            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF + '.1.ebwt')
        output:
-           R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq'),
-           R2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R2.fastq'),
+           R1 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq')),
+           R2 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R2.fastq')),
            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.counts')
        singularity:
            'docker://' + config['docker']['bowtie_samtools']
@@ -61,8 +61,8 @@ if PE:
            unpack(get_trimmed_fastq),
            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF + '.1.bt2')
        output:
-           R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq'),
-           R2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R2.fastq'),
+           R1 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq')),
+           R2 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R2.fastq')),
            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.counts')
        singularity:
            'docker://' + config['docker']['bowtie2_samtools']
@@ -93,7 +93,7 @@ else:
            unpack(get_trimmed_fastq),
            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie', REF + '.1.ebwt')
        output:
-           R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq'),
+           R1 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}_R1.fastq')),
            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie', '{sample}.counts')
        singularity:
            'docker://' + config['docker']['bowtie_samtools']
@@ -120,7 +120,7 @@ else:
            unpack(get_trimmed_fastq),
            index = join(EXT_DIR, 'ERCC', 'index', REF, 'bowtie2', REF + '.1.bt2')
        output:
-           R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq'),
+           R1 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}_R1.fastq')),
            counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'bowtie2', '{sample}.counts')
        singularity:
            'docker://' + config['docker']['bowtie2_samtools']
@@ -143,11 +143,11 @@ else:
            '| samtools view -S -q5 - | cut -f3 | sort | uniq -c  > {output.counts} '
            '2>> {log.error} '
            
-rule spikein_filter_skip_R1:
+rule spikein_filter_skip:
     input:
         R1 = join(FILTER_INTERIM, '{merge}', 'trimmed', 'fastp', '{sample}_R1.fastq'),
     output:
-        R1 = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R1.fastq'),
+        R1 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R1.fastq')),
         counts = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}.counts')
     shell:
         'cp -f {input} {output.R1} && touch {output.counts}'
@@ -156,6 +156,6 @@ rule spikein_filter_skip_R2:
     input:
         R2 = join(FILTER_INTERIM, '{merge}', 'trimmed', 'fastp', '{sample}_R2.fastq'),
     output:
-        R2 = join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R2.fastq')
+        R2 = temp(join(FILTER_INTERIM, '{merge}', 'spikein', 'skip', '{sample}_R2.fastq'))
     shell:
         'cp -f {input} {output}'
