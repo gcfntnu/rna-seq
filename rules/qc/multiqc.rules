@@ -1,11 +1,14 @@
 #-*- mode: snakemake -*-
 
+
+
+
 rule multiqc_config:
     output:
         '.multiqc_config.yaml'
     params:
-        html = 'data/processed/rnaseq/multiqc/multiqc_report.html',
-        data_dir = 'data/processed/rnaseq/multiqc/multiqc_data'
+        html = join(QC_INTERIM, 'multiqc', 'multiqc_report.html'),
+        data_dir = join(QC_INTERIM, 'multiqc', 'multiqc_datal')
     run:
         import yaml
         conf = {}
@@ -18,22 +21,21 @@ rule multiqc_config:
         tbl['star'] = {'uniquely_mapped_percent': False, 'uniquely_mapped': False}
         tbl['fastp'] = {'after_filtering_gc_content': False}
         tbl['qorts'] = {'NumberOfChromosomesCovered': False}
+        tbl['qualimap'] = {'reads_aligned': False}
+        
         conf['table_columns_visible'] = tbl
-        conf['output_fn_name'] = params['html']
-        conf['data_dir_name'] = params['data_dir']
         conf['no_version_check'] = True
-        conf['extra_fn_clean_exts'] = ['.namesorted', '_R1', '_R2', '.ccurve.txt', '.rnaseq.metrics']
+        conf['extra_fn_clean_exts'] = ['.namesorted', '_R1', '_R2', '.ccurve.txt', '.rnaseq.metrics', '.hisat2', '.fastp']
         conf['report_header_info'] = [{'Bioinformatician: ': 'Arnar Flatberg'}, {'E-mail: ': 'arnar.flatberg@ntnu.no'}, {'Phone': '920 29 102'}]
         conf['plots_flat_numseries'] = 250
         #custom_content = {}
         #custom_content['order'] = ['fastp', ]
         #conf['custom_content'] = custom_content
-        conf['module_order'] = ['fastqc', 'fastp', 'star', 'salmon', 'picard', 'rseqc', 'rna_seqc', 'preseq', 'featureCounts']
+        conf['module_order'] = ['fastqc', 'fastp', 'star', 'hisat2', 'salmon', 'qualimap', 'picard', 'qorts', 'rseqc', 'preseq', 'featureCounts']
         if config['organism'] == 'homo_sapiens':
             conf['fastqc_config'] = {'fastqc_theoretical_gc': 'hg38_txome'}
-
-        preseq = {'genome_size': 'hg38_genome', 'read_length': 75, 'x_axis': 'counts', 'y_axis': 'coverage'}
-        conf['preseq'] = preseq
+            preseq = {'genome_size': 'hg38_genome', 'read_length': 75, 'x_axis': 'counts', 'y_axis': 'coverage'}
+            conf['preseq'] = preseq
         
         with open(output[0], 'w') as fh:
             yaml.dump(conf, fh, default_flow_style=False)
@@ -41,19 +43,11 @@ rule multiqc_config:
 rule multiqc_summary:
     input:
         config = rules.multiqc_config.output,
-        salmon = expand(rules.salmon_map.output.meta_log, sample=SAMPLES),
-        salmon2 = expand(rules.salmon_map.output.dist_log, sample=SAMPLES),
-        qc_bam = rules.qc_bam.input
-    singularity:
-        'docker://gcfntnu/multiqc:dev-py27'
+        qc = rules.qc_all.input
     params:
-        picard = expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES),
-        STAR = expand('logs/{sample}/{sample}.Log.final.out', sample=SAMPLES),
-        all = 'logs',
-        outdir = os.path.dirname(rules.multiqc_config.params.html)
-        
-        #fastp = expand('logs/{sample}/*.fastp.json', sample=SAMPLES)
+        outdir = join(QC_INTERIM, 'multiqc')
     output:
-        rules.multiqc_config.params.html
+        html = join(QC_INTERIM, 'multiqc', 'multiqc_report.html'),
+        data_dir = directory(join(QC_INTERIM, 'multiqc', 'multiqc_data'))
     shell:
-        'multiqc -f -c {input.config} -o {params.outdir} {params.STAR} {input.salmon} {input.salmon2} {input.qc_bam} {params.all}'
+        'multiqc -f -c {input.config} -o {params.outdir} logs'

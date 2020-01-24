@@ -4,7 +4,6 @@ Snakemake rules for quality control of rna-seq.
 """
 
 QC_INTERIM = join(INTERIM_DIR, 'rnaseq', 'qc')
-QC_PROCESSED = join(PROCESSED_DIR, 'rnaseq', 'qc')
 
 extra_conf_fn = srcdir('qc.config')
 if os.path.exists(extra_conf_fn):
@@ -12,24 +11,39 @@ if os.path.exists(extra_conf_fn):
         c  = yaml.load(fh) or {}
         update_config2(config, c)      
 include:
-    'qc/rseqc.rules'
+    'qc/fastq.rules'
 include:
-    'qc/picard.rules'
+    'qc/bam.rules'
 include:
-    'qc/fastqc.rules'
-include:
-    'qc/preseq.rules'
-include:
-    'qc/qort.rules'
-include:
-    'qc/deeptools.rules'
+    'qc/quant.rules'
 
-rule qc_bam:
-    input:
-       expand('logs/{sample}/{sample}.readdist.txt', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.junctionSaturation_plot.r', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.ccurve.txt', sample=SAMPLES),
-       expand('logs/{sample}/{sample}.rnaseq.metrics', sample=SAMPLES)
-       
+
+if len(config['read_geometry']) > 1:
+    rule qc_all:
+        input:
+            expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_saturation.output, sample=SAMPLES),
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qorts.output, sample=SAMPLES),
+            expand(rules.picard_insertsize.output, sample=SAMPLES),
+            expand(rules.rseqc_inner_distance.output, sample=SAMPLES),
+            expand(rules.qualimap_rnaseq.output, sample=SAMPLES),
+            expand(rules.salmon_meta_info.output, sample=SAMPLES),
+            expand(rules.salmon_flendist.output, sample=SAMPLES)
+else:
+    rule qc_all:
+        input:
+            expand(rules.rseqc_read_distribution.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_annotation.output, sample=SAMPLES),
+            expand(rules.rseqc_junction_saturation.output, sample=SAMPLES),
+            expand(rules.picard_rnametrics.output, sample=SAMPLES),
+            expand(rules.preseq_lc_extrap.output, sample=SAMPLES),
+            expand(rules.qorts.output, sample=SAMPLES),
+            expand(rules.qualimap_rnaseq.output, sample=SAMPLES),
+            expand(rules.salmon_meta_info.output, sample=SAMPLES)
+        
+            
 include:
     'qc/multiqc.rules'

@@ -45,16 +45,16 @@ def get_params(wildcards, input, output):
         
 rule sartools_deseq2_run:
     input:
-        target = 'data/processed/sample_info.tsv',
-        counts = 'data/processed/rnaseq/quant/salmon/genes.quant',
+        target = join(INTERIM_DIR, 'sample_info.tsv'),
+        counts = join(QUANT_INTERIM, '{quant}', 'tximport', 'tx_{quant}.rds'),
         meta = join(REF_DIR, 'genes', 'genes.tsv')
     params:
         script = srcdir('scripts/template_script_DESeq2_CL.r'),
         args = get_params
     singularity:
-       'docker://flatberg/sartools:1.6.6'
+       'docker://' + config['docker']['sartools']
     output:
-        'data/processed/rnaseq/sartools/{model_name}/{model_name}_report.html'
+        join(QUANT_INTERIM, '{quant}', 'sartools', '{model_name}', '{model_name}_report.html')
     shell:
         'Rscript {params.script} '
         '--projectName {wildcards.model_name} '
@@ -63,45 +63,26 @@ rule sartools_deseq2_run:
         '--metaFile {input.meta} '
         '{params.args} '
         
-rule sartools_edger_run:
-    input:
-        target = 'data/processed/sample_info.tsv',
-        counts = 'data/processed/rnaseq/quant/salmon/genes.quant'
-    params:
-        script = srcdir('scripts/template_script_DESeq2_CL.r'),
-        project_id = config['project_id'],
-        condition = 'Sample_Group',
-        ref_level = 'Mock'
-    singularity:
-       'docker://flatberg/sartools:1.6.6'
-    shell:
-        'Rscript {params.script} '
-        '--output data/processed/rnaseq/sartools '
-        '--projectName {params.project_id} '
-        '--author Arnar Flatberg '
-        '--targetFile {input.target} '
-        '--countsFile {input.counts} '
-        '--varInt {params.condition} '
-        '--condRef {params.ref_level} '
-
 
 rule sartools_deseq2:
-     input:
-         'data/processed/rnaseq/sartools/{model_name}/{model_name}_report.html'
-     output:
-         directory('data/processed/rnaseq/sartools/{model_name}/tables/excel_format')
-     run:
-         import pandas as pd
-         warnings.warn("INPUT {}".format(str(input)))
-         filenames = glob.glob(os.path.join(os.path.split(input[0])[0], 'tables', '*.txt')) 
-         for fn in filenames:
-             warnings.warn("INPUT file: {}".format(fn))
-             if fn.endswith('.html'):
-                 continue
-             df = pd.read_csv(fn, sep='\t', index_col=0)
-             pth, bn = os.path.split(fn)
-             excel_bn = os.path.splitext(bn)[0] + '.xlsx'
-             if not os.path.exists(join(pth, 'excel_format')):
-                 os.makedirs(join(pth, 'excel_format'))
-             out = join(pth, 'excel_format', excel_bn)
-             df.to_excel(out, index_label='ID', freeze_panes=[1,4])
+    input:
+        join(QUANT_INTERIM, '{quant}', 'sartools', '{model_name}', '{model_name}_report.html')
+    output:
+        directory(join(QUANT_INTERIM, '{quant}', 'sartools', '{model_name}', 'tables', 'excel_format'))
+    singularity:
+        'docker://' + config['docker']['default']
+    run:
+        import pandas as pd
+        warnings.warn("INPUT {}".format(str(input)))
+        filenames = glob.glob(os.path.join(os.path.split(input[0])[0], 'tables', '*.txt')) 
+        for fn in filenames:
+            warnings.warn("INPUT file: {}".format(fn))
+            if fn.endswith('.html'):
+                continue
+            df = pd.read_csv(fn, sep='\t', index_col=0)
+            pth, bn = os.path.split(fn)
+            excel_bn = os.path.splitext(bn)[0] + '.xlsx'
+            if not os.path.exists(join(pth, 'excel_format')):
+                os.makedirs(join(pth, 'excel_format'))
+            out = join(pth, 'excel_format', excel_bn)
+            df.to_excel(out, index_label='ID', freeze_panes=[1,4])

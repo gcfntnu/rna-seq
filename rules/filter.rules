@@ -74,7 +74,6 @@ def get_processed_fastq(wildcards):
     ZIP_FILTERED_FASTQ = False #FIXME: options
     DST_PTH = join(FILTER_INTERIM, '{}', 'rrna', config['filter']['ribosomal']['quantifier'])
     fastq = get_raw_fastq(wildcards)
-        
     R1 = [i.split(FASTQ_DIR)[-1][1:] for i in fastq['R1']]
     if not ZIP_FILTERED_FASTQ:
         R1 = [i.split('.gz')[0] for i in R1 if i.endswith('.gz')]
@@ -104,5 +103,15 @@ def get_processed_fastq(wildcards):
         out = {'R1': R1, 'R2': R2}
     else:
         out = {'R1': R1}
-        
     return out
+
+
+rule _filter:
+    input:
+        unpack(get_processed_fastq)
+    output:
+        temp(touch('{sample}.filtered'))
+
+rule filter_all:
+    input:
+        expand(rules._filter.output, sample=SAMPLES)

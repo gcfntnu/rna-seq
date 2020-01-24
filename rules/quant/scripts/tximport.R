@@ -34,21 +34,20 @@ if (args$verbose == TRUE){
 }
 
 
-tx.info <- readr::read <- tsv(args$txinfo)
+tx.info <- read.delim(args$txinfo, sep="\t")
 tx2gene <- tx.info[,c("transcript_id", "gene_id")]
 
 
-if (args$type in c("kallisto", "salmon", "stringtie", "sailfish", "rsem")){
-    txi.tx <- tximport(args$input, type=args$type, tx2gene=tx2gene,
-                       importer=importer, txOut=TRUE)
+if (args$type %in% c("kallisto", "salmon", "stringtie", "sailfish", "rsem")){
+    txi.tx <- tximport(args$input, type=args$type, tx2gene=tx2gene, txOut=TRUE)
 } else if (args$type == "none"){
     txi.tx <- tximport(args$input, type=args$type, tx2gene=tx2gene,
                        importer=importer, txIn=TRUE, txOut=TRUE)
 } else{
-    stop(cat("method: ", args.type, " not valid \n"))
+    stop(cat("method: ", args$type, " not valid \n"))
 }
 
-txi.tx$type <- args.type
+txi.tx$type <- args$type
 txi.tx$tx2gene <- tx2gene
 
-saveRDS(txi.tx, args.output, compress="none")
+saveRDS(txi.tx, args$output, compress=FALSE)

@@ -31,12 +31,12 @@ make_option(c("-s", "--subset"),
             help="subset samples, use comma separated list of samples with no spaces  [default: %default]."),
 
 make_option(c("-r", "--countsFile"),
-            default="data/processed/rnaseq/quant/salmon/gene.quant",
+            default="data/tmp/rnaseq/quant/salmon/tximport/tx_salmon.rds",
             dest="countsFile",
             help="path to the count matrix file [default: %default]."),
 
 make_option(c("-m", "--metaFile"),
-            default="data/processed/rnaseq/quant/salmon/gene_info.tsv",
+            default="data/tmp/rnaseq/quant/salmon/tximport/gene_info.tsv",
             dest="metaFile",
             help="path to the features info file [default: %default]."),
 
@@ -106,7 +106,7 @@ make_option(c("-C", "--colors"),
             help="colors of each biological condition on the plots\n\t\t\"col1,col2,col3,col4\"\n\t\t[default: %default]"),
 
 make_option(c("-O", "--output"),
-            default="data/processed/rnaseq/sartools",
+            default="data/tmp/rnaseq/quant/salmon/sartools",
             dest="output",
             help="output directory [default: %default]"),
 
