@@ -12,53 +12,52 @@ import numpy as np
 
 
 
-def biotype_yaml(E, F):
-    df = pd.concat([E, F['gene_biotype']], axis=1)
-    tab = df.groupby('gene_biotype').sum()
-    tab = tab / tab.sum(0)
-    keep = (tab >= 0.01).sum(1) > 0
-    tab = tab.loc[keep,:]
-    order = tab.sum(1).argsort()[::-1]
-    tab = tab.iloc[order,:]
+def higly_expressed_yaml(E, F, ntop=10):
+
+    order = E.values.sum(1).argsort()[::-1]
+    keep = order[:ntop]
+    E.f = E.iloc[keep,]
+    F.f = F.loc[E.f.index,:]
+    df = pd.concat([E.f, F.f[['gene_name', 'gene_biotype']]], axis=1)
     
+    
+
     cats = []
     keys = OrderedDict()
     default_colors = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c',
                       '#8085e9','#f15c80', '#e4d354', '#2b908f',
                       '#f45b5b', '#91e8e1']
-    for i, k in enumerate(tab.index):
-        if k == k.upper():
-            name = k
-        else:
-            name = k.replace('_',  ' ').title()
+    for i, k in enumerate(df.index):
+        name = df.loc[k, 'gene_name'] + ': ' + df.loc[k, 'gene_biotype']
         color = default_colors[i]
         keys[k] = {'color': color, 'name': name}
     
     # Config for the plot
     pconfig = {
-        'id': 'gene_biotypes',
-        'title': 'Gene Biotype Counts',
-        'ylab': '# Reads',
-        'cpswitch_counts_label': 'Number of Reads'
+        'id': 'gene_high',
+        'title': 'Higly Expressed Genes',
+        'ylab': 'TPM'
     }
     
     section = {}
-    section['id'] = 'gene_biotypes'
-    section['section_name'] = 'Gene Biotypes Count'
-    section['description'] = 'Summary of gene annotation types.'
+    section['id'] = 'gene_high'
+    section['section_name'] = 'Higly Expressed Genes'
+    section['description'] = 'Summary of the 10 most highly expressed genes.'
     section['plot_type'] = 'bargraph'
     
     section['pconfig'] = pconfig
     section['categories'] = keys
     data_dict = OrderedDict()
-    print(tab.to_dict())
-    section['data'] = [tab.to_dict(into=data_dict)]
+    for k, v in df.to_dict().items():
+        if not k in ['gene_name', 'gene_biotype']:
+            data_dict[k] = v
+    section['data'] = [data_dict]
 
     return section
 
 
 def argparser():
-    parser = argparse.ArgumentParser(description="Gene Biotypes figure for QC report")
+    parser = argparse.ArgumentParser(description="Higly expressed genes figure for QC report")
     parser.add_argument("exprs")
     parser.add_argument(
         "--sample-info",
@@ -97,11 +96,12 @@ if __name__ == "__main__":
         warnings.warn("missing annotations in feature info!")
     F = F.loc[E.index, :]
 
-    if not 'gene_biotype' in F.columns:
-        raise ValueError('Feature info needs column `gene_biotype` !')
+    if not 'gene_biotype' in F.columns or 'gene_name' not in F.columns:
+        print(F.columns)
+        raise ValueError('Feature info needs columns `gene_biotype` and `gene_name` !')
 
 
-    section =  biotype_yaml(E, F)
+    section =  higly_expressed_yaml(E, F)
 
     with open(args.output, 'w') as fh:
         yaml.dump(section, fh, default_flow_style=False)
