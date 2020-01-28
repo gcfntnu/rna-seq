@@ -127,7 +127,7 @@ def multiqc_yaml(T, S=None, n_comp=2):
     
     
     with open(args.output, 'w') as fh:
-        yaml.dump(section, fh, default_flow_style=False)
+        yaml.dump(section, fh, default_flow_style=False, sort_keys=False)
 
 def argparser():
     parser = argparse.ArgumentParser(description="PCA figure for QC report")
