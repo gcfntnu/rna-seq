@@ -1,6 +1,5 @@
 #!/usr/bin env python
 
-from collections import OrderedDict
 import sys
 import argparse
 import warnings
@@ -22,7 +21,7 @@ def biotype_yaml(E, F):
     tab = tab.iloc[order,:]
     
     cats = []
-    keys = OrderedDict()
+    keys = {}
     default_colors = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c',
                       '#8085e9','#f15c80', '#e4d354', '#2b908f',
                       '#f45b5b', '#91e8e1']
@@ -50,9 +49,7 @@ def biotype_yaml(E, F):
     
     section['pconfig'] = pconfig
     section['categories'] = keys
-    data_dict = OrderedDict()
-    print(tab.to_dict())
-    section['data'] = [tab.to_dict(into=data_dict)]
+    section['data'] = [tab.to_dict()]
 
     return section
 
@@ -104,4 +101,4 @@ if __name__ == "__main__":
     section =  biotype_yaml(E, F)
 
     with open(args.output, 'w') as fh:
-        yaml.dump(section, fh, default_flow_style=False)
+        yaml.dump(section, fh, default_flow_style=False, sort_keys=False)

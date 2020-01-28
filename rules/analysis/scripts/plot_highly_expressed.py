@@ -1,6 +1,5 @@
 #!/usr/bin env python
 
-from collections import OrderedDict
 import sys
 import argparse
 import warnings
@@ -20,10 +19,7 @@ def higly_expressed_yaml(E, F, ntop=10):
     F.f = F.loc[E.f.index,:]
     df = pd.concat([E.f, F.f[['gene_name', 'gene_biotype']]], axis=1)
     
-    
-
-    cats = []
-    keys = OrderedDict()
+    keys = {}
     default_colors = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c',
                       '#8085e9','#f15c80', '#e4d354', '#2b908f',
                       '#f45b5b', '#91e8e1']
@@ -47,7 +43,7 @@ def higly_expressed_yaml(E, F, ntop=10):
     
     section['pconfig'] = pconfig
     section['categories'] = keys
-    data_dict = OrderedDict()
+    data_dict = {}
     for k, v in df.to_dict().items():
         if not k in ['gene_name', 'gene_biotype']:
             data_dict[k] = v
@@ -104,4 +100,4 @@ if __name__ == "__main__":
     section =  higly_expressed_yaml(E, F)
 
     with open(args.output, 'w') as fh:
-        yaml.dump(section, fh, default_flow_style=False)
+        yaml.dump(section, fh, default_flow_style=False, sort_keys=False)
