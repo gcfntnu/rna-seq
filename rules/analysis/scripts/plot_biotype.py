@@ -3,6 +3,7 @@
 import sys
 import argparse
 import warnings
+
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 
 import yaml
@@ -10,46 +11,54 @@ import pandas as pd
 import numpy as np
 
 
-
 def biotype_yaml(E, F):
-    df = pd.concat([E, F['gene_biotype']], axis=1)
-    tab = df.groupby('gene_biotype').sum()
-    tab = tab / tab.sum(0)
-    keep = (tab >= 0.01).sum(1) > 0
-    tab = tab.loc[keep,:]
+    df = pd.concat([E, F["gene_biotype"]], axis=1)
+    tab = df.groupby("gene_biotype").sum()
+    tab_rel = tab / tab.sum(0)
+    keep = (tab_rel >= 0.01).sum(1) > 0
+    tab = tab.loc[keep, :]
     order = tab.sum(1).argsort()[::-1]
-    tab = tab.iloc[order,:]
-    
+    tab = tab.iloc[order, :]
+
     cats = []
     keys = {}
-    default_colors = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c',
-                      '#8085e9','#f15c80', '#e4d354', '#2b908f',
-                      '#f45b5b', '#91e8e1']
+    default_colors = [
+        "#7cb5ec",
+        "#434348",
+        "#90ed7d",
+        "#f7a35c",
+        "#8085e9",
+        "#f15c80",
+        "#e4d354",
+        "#2b908f",
+        "#f45b5b",
+        "#91e8e1",
+    ]
     for i, k in enumerate(tab.index):
         if k == k.upper():
             name = k
         else:
-            name = k.replace('_',  ' ').title()
+            name = k.replace("_", " ").title()
         color = default_colors[i]
-        keys[k] = {'color': color, 'name': name}
-    
+        keys[k] = {"color": color, "name": name}
+
     # Config for the plot
     pconfig = {
-        'id': 'gene_biotypes',
-        'title': 'Gene Biotype Counts',
-        'ylab': '# Reads',
-        'cpswitch_counts_label': 'Number of Reads'
+        "id": "gene_biotypes",
+        "title": "Gene Biotype Counts",
+        "ylab": "# Reads",
+        "cpswitch_counts_label": "Number of Reads",
     }
-    
+
     section = {}
-    section['id'] = 'gene_biotypes'
-    section['section_name'] = 'Gene Biotypes Count'
-    section['description'] = 'Summary of gene annotation types.'
-    section['plot_type'] = 'bargraph'
-    
-    section['pconfig'] = pconfig
-    section['categories'] = keys
-    section['data'] = [tab.to_dict()]
+    section["id"] = "gene_biotypes"
+    section["section_name"] = "Gene Biotypes Count"
+    section["description"] = "Summary of gene annotation types."
+    section["plot_type"] = "bargraph"
+
+    section["pconfig"] = pconfig
+    section["categories"] = keys
+    section["data"] = [tab.to_dict()]
 
     return section
 
@@ -65,7 +74,8 @@ def argparser():
     parser.add_argument(
         "--feature-info",
         help="Required feature info. Will subset expr table if needed",
-        dest="features", required=True,
+        dest="features",
+        required=True,
     )
     parser.add_argument(
         "-o ",
@@ -76,6 +86,7 @@ def argparser():
 
     args = parser.parse_args()
     return args
+
 
 if __name__ == "__main__":
     args = argparser()
@@ -88,17 +99,16 @@ if __name__ == "__main__":
         if not E.columns.isin(S.index).all():
             raise ValueError("missing samples in sample info!")
         S = S.loc[E.columns, :]
-    
+
     F = pd.read_csv(args.features, sep="\t", index_col=0)
     if not E.index.isin(F.index).all():
         warnings.warn("missing annotations in feature info!")
     F = F.loc[E.index, :]
 
-    if not 'gene_biotype' in F.columns:
-        raise ValueError('Feature info needs column `gene_biotype` !')
+    if not "gene_biotype" in F.columns:
+        raise ValueError("Feature info needs column `gene_biotype` !")
 
+    section = biotype_yaml(E, F)
 
-    section =  biotype_yaml(E, F)
-
-    with open(args.output, 'w') as fh:
+    with open(args.output, "w") as fh:
         yaml.dump(section, fh, default_flow_style=False, sort_keys=False)
