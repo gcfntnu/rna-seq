@@ -14,8 +14,8 @@ import numpy as np
 def biotype_yaml(E, F):
     df = pd.concat([E, F['gene_biotype']], axis=1)
     tab = df.groupby('gene_biotype').sum()
-    tab = tab / tab.sum(0)
-    keep = (tab >= 0.01).sum(1) > 0
+    tab_rel = tab / tab.sum(0)
+    keep = (tab_rel >= 0.01).sum(1) > 0
     tab = tab.loc[keep,:]
     order = tab.sum(1).argsort()[::-1]
     tab = tab.iloc[order,:]
