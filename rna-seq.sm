@@ -43,6 +43,8 @@ if LIBPREP['name'].startswith('Lexogen'):
 if not 'SAMPLES' in locals():
     SAMPLES = list(config.get('samples', {}).keys())
 
+SAMPLES = [str(i) for i in SAMPLES]
+
 include:
     'rules/filter.rules'
 include:

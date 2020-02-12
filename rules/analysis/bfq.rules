@@ -9,9 +9,46 @@ rule bfq_pca:
     singularity:
         'docker://' + config['docker']['bfq_plot']
     output:
-        join(BFQ_INTERIM, 'figs', 'gene_vst_pca_mqc.png'),
+        join(BFQ_INTERIM, 'figs', 'pca_mqc.yaml'),
     shell:
         'python {params.script} {input.exprs} --sample-info {input.sample_info} --output {output}'
+
+rule bfq_gene_biotypes:
+    input:
+        exprs = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
+        sample_info =  join(INTERIM_DIR, 'sample_info.tsv'),
+        feature_info = join(REF_DIR, 'genes', 'genes.tsv')
+    params:
+        script = srcdir('scripts/plot_biotype.py')
+    singularity:
+        'docker://' + config['docker']['bfq_plot']
+    output:
+        join(BFQ_INTERIM, 'figs', 'gene_biotypes_mqc.yaml'),
+    shell:
+        'python {params.script} '
+        '{input.exprs} '
+        '--sample-info {input.sample_info} '
+        '--output {output} '
+        '--feature-info {input.feature_info} '
+
+rule bfq_gene_high:
+    input:
+        exprs = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm.tsv'),
+        sample_info =  join(INTERIM_DIR, 'sample_info.tsv'),
+        feature_info = join(REF_DIR, 'genes', 'genes.tsv')
+    params:
+        script = srcdir('scripts/plot_highly_expressed.py')
+    singularity:
+        'docker://' + config['docker']['bfq_plot']
+    output:
+        join(BFQ_INTERIM, 'figs', 'gene_high_mqc.yaml')
+    shell:
+        'python {params.script} '
+        '{input.exprs} '
+        '--sample-info {input.sample_info} '
+        '--output {output} '
+        '--feature-info {input.feature_info} '
+
 
 if len(config['read_geometry']) > 1:
     rule bfq_qc:
@@ -73,7 +110,9 @@ rule bfq_aligned:
         
 rule bfq_all:
     input:
-        join(BFQ_INTERIM, 'figs', 'gene_vst_pca_mqc.png'),
+        join(BFQ_INTERIM, 'figs', 'pca_mqc.yaml'),
+        join(BFQ_INTERIM, 'figs', 'gene_biotypes_mqc.yaml'),
+        join(BFQ_INTERIM, 'figs', 'gene_high_mqc.yaml'),
         rules.bfq_qc.input,
         rules.bfq_exprs.output,
         rules.bfq_aligned.output
