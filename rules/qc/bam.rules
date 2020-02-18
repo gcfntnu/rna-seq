@@ -218,7 +218,8 @@ rule picard_rnametrics:
     output:
         metrics = join(PICARD_QCDIR, '{sample}.rnaseq.metrics')
     log:
-        metrics = 'logs/{sample}/{sample}.rnaseq.metrics'
+        metrics = 'logs/{sample}/{sample}.rnaseq.metrics',
+        log_out = 'logs/{sample}/{sample}.log'
     params:
         java_opt='-Xms4g -Xmx4g'
     threads:
@@ -227,7 +228,7 @@ rule picard_rnametrics:
         'docker://' + config['docker']['picard_gatk']
     shell:
         """
-        picard CollectRnaSeqMetrics {params.java_opt} INPUT={input.bam} OUTPUT={output.metrics} REF_FLAT={input.ref_flat} STRAND=SECOND_READ_TRANSCRIPTION_STRAND ASSUME_SORTED=TRUE RIBOSOMAL_INTERVALS={input.rrna} VALIDATION_STRINGENCY=SILENT
+        picard CollectRnaSeqMetrics {params.java_opt} INPUT={input.bam} OUTPUT={output.metrics} REF_FLAT={input.ref_flat} STRAND=SECOND_READ_TRANSCRIPTION_STRAND ASSUME_SORTED=TRUE RIBOSOMAL_INTERVALS={input.rrna} VALIDATION_STRINGENCY=SILENT 2> {log.log_out} 
         cp {output.metrics} {log.metrics}
         """
 
