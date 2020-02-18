@@ -222,7 +222,7 @@ rule picard_rnametrics:
     params:
         java_opt='-Xms4g -Xmx4g'
     threads:
-        4
+        2
     singularity:
         'docker://' + config['docker']['picard_gatk']
     shell:

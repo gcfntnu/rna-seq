@@ -77,7 +77,7 @@ rule salmon_map:
         index = join(REF_DIR, 'index', 'transcriptome', 'salmon'),
         sample_args = sample_args
     threads:
-        8
+        4
     singularity:
         'docker://' + config['docker']['salmon']
     output:
