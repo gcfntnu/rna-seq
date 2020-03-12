@@ -27,7 +27,7 @@ if PE:
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         threads:
-            3
+            1
         params:
             args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 1000 ',
             adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
@@ -52,7 +52,7 @@ if PE:
             adapter_arg = '--adapter_sequence {} --adapter_sequence_r2 {} '.format(ADAPTER, ADAPTER2) if ADAPTER else '--detect_adapter_for_pe ',
             kit_args = LIBPREP.get('paired_end',{}).get('fastp', {}).get('params') or ''
         threads:
-            3
+            1
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
@@ -69,7 +69,7 @@ if PE:
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         threads:
-            3
+            1
         params:
             args = '--overrepresentation_analysis --overrepresentation_sampling 10000 -A -Q -L -G '
         log:
@@ -91,7 +91,7 @@ if PE:
         params:
             args = '--overrepresentation_analysis --overrepresentation_sampling 10000 -A -Q -L -G ',
         threads:
-            3
+            1
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:
@@ -108,7 +108,7 @@ else:
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')           
         threads:
-            3        
+            1        
         params:
             args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 10000 ',
             adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
@@ -128,7 +128,7 @@ else:
             log_html = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')
         threads:
-            3
+            1
         params:
             args = '--low_complexity_filter --overrepresentation_analysis --overrepresentation_sampling 10000 ',
             adapter_arg = '--adapter_sequence {}'.format(ADAPTER) if ADAPTER else '',
@@ -148,7 +148,7 @@ else:
             log_html = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.html'),
             log_json = join(FILTER_INTERIM, 'merged_fastq', 'trimmed', 'fastp', 'qc', '{sample}.json')               
         threads:
-            3        
+            1        
         params:
             args = '--overrepresentation_analysis --overrepresentation_sampling 10000 -A -Q -L -G'
         log:
@@ -168,7 +168,7 @@ else:
         params:
             args = '--overrepresentation_analysis --overrepresentation_sampling 10000 -A -Q -L -G',
         threads:
-            3
+            1
         log:
             json = 'logs/{sample}/{sample}.fastp.json'
         singularity:

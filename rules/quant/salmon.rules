@@ -75,14 +75,14 @@ rule salmon_map:
         nboot = 30,
         lib_type = LIB_TYPE,
         index = join(REF_DIR, 'index', 'transcriptome', 'salmon'),
-        sample_args = sample_args
+        sample_args = sample_args,
+        unmapped_args = '--writeUnmappedNames --writeMappings=unmapped.sam '
     threads:
-        8
+        4
     singularity:
         'docker://' + config['docker']['salmon']
     output:
         quant = join(SALMON_INTERIM, '{sample}', 'quant.sf'),
-        unmapped = join(SALMON_INTERIM, '{sample}', 'unmapped.sam'),
         meta_log = join(SALMON_INTERIM, '{sample}', 'aux_info', 'meta_info.json'),
         dist_log = join(SALMON_INTERIM, '{sample}', 'libParams', 'flenDist.txt')
     shell:
@@ -94,8 +94,6 @@ rule salmon_map:
         '--validateMappings '
         '--rangeFactorizationBins 4 '
         '--seqBias '
-        '--writeUnmappedNames '
-        '--writeMappings={output.unmapped} '
         '-o {params.output} '
         '{params.sample_args} '
         
