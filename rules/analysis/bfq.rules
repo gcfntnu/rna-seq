@@ -95,13 +95,14 @@ rule bfq_exprs:
 
 rule bfq_aligned:
     input:
-        bam = expand(join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam'), sample=SAMPLES),
-        bai = expand(join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam.bai'), sample=SAMPLES),
-        md5 = expand(join(ALIGN_INTERIM, 'star', '{sample}.sorted.bam.md5'), sample=SAMPLES)
+        expand(rules.picard_mark_duplicates.output.bam, sample=SAMPLES),
+        expand(rules.picard_mark_duplicates.output.bai, sample=SAMPLES),
+        expand(rules.picard_mark_duplicates.output.md5, sample=SAMPLES)
     output:
         bam = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam'), sample=SAMPLES),
         bai = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam.bai'), sample=SAMPLES),
-        md5 = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam.md5'), sample=SAMPLES)
+        md5 = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam.md5'), sample=SAMPLES),
+        
     params:
         outdir = join(BFQ_INTERIM, 'align')
     run:
