@@ -91,7 +91,7 @@ rule bfq_exprs:
         tx_info = join(BFQ_INTERIM, 'exprs', 'transcript_info.tsv')
     run:
         for fn in input:
-            shell('ln -sr -t {params.outdir} {fn}')
+            shell('ln -srf -t {params.outdir} {fn}')
 
 rule bfq_aligned:
     input:
@@ -100,14 +100,13 @@ rule bfq_aligned:
         expand(rules.picard_mark_duplicates.output.md5, sample=SAMPLES)
     output:
         bam = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam'), sample=SAMPLES),
-        bai = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam.bai'), sample=SAMPLES),
+        bai = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bai'), sample=SAMPLES),
         md5 = expand(join(BFQ_INTERIM, 'align', '{sample}.sorted.bam.md5'), sample=SAMPLES),
-        
     params:
         outdir = join(BFQ_INTERIM, 'align')
     run:
         for fn in input:
-            shell('ln -sr -t {params.outdir} {fn}')
+            shell('ln -srf -t {params.outdir} {fn}')
         
 rule bfq_all:
     input:
