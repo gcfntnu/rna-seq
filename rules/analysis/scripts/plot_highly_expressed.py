@@ -24,7 +24,7 @@ def higly_expressed_yaml(E, F, ntop=10):
                       '#8085e9','#f15c80', '#e4d354', '#2b908f',
                       '#f45b5b', '#91e8e1']
     for i, k in enumerate(df.index):
-        name = df.loc[k, 'gene_name'] + ': ' + df.loc[k, 'gene_biotype']
+        name = '{}: {}'.format(df.loc[k, 'gene_name'], df.loc[k, 'gene_biotype'])
         color = default_colors[i]
         keys[k] = {'color': color, 'name': name}
     
