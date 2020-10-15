@@ -155,6 +155,7 @@ if (!is.null(opt$subset)){
 
 print(paste("workDir", workDir))
 print(paste("subset", subset))
+options(echo=TRUE)
 
 # print(paste("projectName", projectName))
 # print(paste("author", author))
@@ -364,10 +365,14 @@ writeReport.DESeq2(target=target, counts=viz.counts, out.DESeq2=out.DESeq2, summ
 
 ## mv to output folder
 if (!dir.exists(output)){
-    dir.create(output, showWarnings=FALSE, recursive=TRUE)
+    dir.create(output, showWarnings=TRUE, recursive=TRUE)
 }
 
 file.rename("tables", file.path(output, "tables"))
 file.rename("figures", file.path(output, "figures"))
 report.name <- paste(projectName, "report.html", sep="_")
-file.rename(report.name, file.path(output, report.name) )
+file.rename(report.name, file.path(output, report.name))
+
+#unlink("tables", recursive = TRUE)
+#unlink("figures", recursive = TRUE)
+#unlink(report.name)
