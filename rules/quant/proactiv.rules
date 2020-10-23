@@ -1,0 +1,25 @@
+
+DB = config['db'].get('reference_db', 'ensembl')
+VER = config['db'][DB]['release']
+
+rule proactiv_build:
+    input:
+        join(OUTDIR, 'genes', 'genes.gtf')
+    output:
+        'proactive_db.rds'
+    params:
+        script = srcdir('scripts/proactiv_build.R')
+    shell:
+        'Rscript {params.script} '
+
+rule proactiv_run:
+    input:
+        'ensembl.r100.rds'
+    output:
+        
+    params:
+        script = srcdir('scripts/run_proactiv.R')
+    singularity:
+        'docker://gcfntnu/proactiv:dev'
+    shell:
+        library(proActiv)
