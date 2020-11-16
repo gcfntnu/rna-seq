@@ -36,7 +36,7 @@ rule bfq_gene_biotypes:
 rule bfq_gene_high:
     input:
         abundance = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm.tsv'),
-        counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv')
+        counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
         sample_info =  join(INTERIM_DIR, 'sample_info.tsv'),
         feature_info = join(REF_DIR, 'genes', 'genes.tsv')
     params:
