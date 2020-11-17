@@ -34,6 +34,13 @@ tx2gene <- tx.info[,c("transcript_id", "gene_id")]
 
 txi.tx <- readRDS(args$input)
 
+#small testdata may contain a lot of zero counts 
+safeEstimateSizeFactors <- function(dds, ...){
+    geoMeans <- apply(cts, 1, function(row) if (all(row == 0)) 0 else exp(mean(log(row[row != 0]))))
+    out <- tryCatch(varianceStabilizingTransformation(dds, ...), error=estimateSizeFactors(dds, geoMeans=geoMeans, ...))
+}
+
+
 if (args$type == "gene"){
     out <- summarizeToGene(txi.tx, tx2gene)$counts
 } else if (args$type == "gene_tpm"){
@@ -65,26 +72,27 @@ if (args$type == "gene"){
     counts <- summarizeToGene(txi.tx, tx2gene)$counts
     samples <- data.frame(row.names=colnames(counts))
     dds <-DESeqDataSetFromMatrix(round(counts), colData=samples, design = ~1)
-    dds <- estimateSizeFactors(dds)
+    tryCatch
+    dds <- safeEstimateSizeFactors(dds)
     vsd <- varianceStabilizingTransformation(dds)
     out <- assay(vsd)
 } else if (args$type == "gene_rlog"){
     counts <- summarizeToGene(txi.tx, tx2gene)$counts
     samples <- data.frame(row.names=colnames(counts))
     dds <-DESeqDataSetFromMatrix(round(counts), colData=samples, design = ~1)
-    dds <- estimateSizeFactors(dds)
+    dds <- safeEstimateSizeFactors(dds)
     R <- rlog(dds)
     out <- assay(R)
 } else if (args$type == "tx_vst"){
     samples <- data.frame(row.names=colnames(txi.tx$counts))
     dds <-DESeqDataSetFromMatrix(round(txi.tx$counts),colData=samples, design = ~1)
-    dds <- estimateSizeFactors(dds)
+    dds <- safeEstimateSizeFactors(dds)
     vsd <- varianceStabilizingTransformation(dds)
     out <- assay(vsd)
 } else if (args$type == "tx_rlog"){
     samples <- data.frame(row.names=colnames(txi.tx$counts))
     dds <-DESeqDataSetFromMatrix(round(txi.tx$counts), colData=samples, design = ~1)
-    dds <- estimateSizeFactors(dds)
+    dds <- safeEstimateSizeFactors(dds)
     R <- rlog(dds)
     out <- assay(R)
 } else if (args$type == "gene_info"){
