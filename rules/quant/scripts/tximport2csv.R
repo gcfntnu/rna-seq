@@ -35,9 +35,10 @@ tx2gene <- tx.info[,c("transcript_id", "gene_id")]
 txi.tx <- readRDS(args$input)
 
 #small testdata may contain a lot of zero counts 
-safeEstimateSizeFactors <- function(dds, ...){
+safeEstimateSizeFactors <- function(dds){
+    cts <- counts(dds)
     geoMeans <- apply(cts, 1, function(row) if (all(row == 0)) 0 else exp(mean(log(row[row != 0]))))
-    out <- tryCatch(varianceStabilizingTransformation(dds, ...), error=estimateSizeFactors(dds, geoMeans=geoMeans, ...))
+    out <- estimateSizeFactors(dds, geoMeans=geoMeans)
 }
 
 
