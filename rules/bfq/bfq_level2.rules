@@ -117,6 +117,6 @@ rule bfq_level2_all:
         join(BFQ_INTERIM, 'figs', 'pca_mqc.yaml'),
         join(BFQ_INTERIM, 'figs', 'gene_biotypes_mqc.yaml'),
         join(BFQ_INTERIM, 'figs', 'gene_high_mqc.yaml'),
-        rules.bfq_qc.input,
-        rules.bfq_exprs.output,
-        rules.bfq_aligned.output
+        rules.bfq_level2_qc.input,
+        rules.bfq_level2_exprs.output,
+        rules.bfq_level2_aligned.output
