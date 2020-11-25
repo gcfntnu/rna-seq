@@ -14,7 +14,7 @@ rule bfq_level2_pca:
 
 rule bfq_level2_gene_biotypes:
     input:
-        exprs = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
+        counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
         sample_info =  join(INTERIM_DIR, 'sample_info.tsv'),
         feature_info = join(REF_DIR, 'genes', 'genes.tsv')
     params:
@@ -26,7 +26,7 @@ rule bfq_level2_gene_biotypes:
     shell:
         'python {params.script} '
         '--figure top_biotypes '
-        '--abundance {input.abundance} '
+        '--abundance {input.counts} '
         '--counts {input.counts} '
         '--sample-info {input.sample_info} '
         '--output {output} '
