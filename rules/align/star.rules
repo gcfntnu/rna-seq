@@ -60,7 +60,7 @@ rule star_align:
     output:
         bam = temp(join(STAR_INTERIM, '{sample}.Aligned.sortedByCoord.out.bam'))
     threads:
-       4 
+       48
     log:
         'logs/{sample}/{sample}.Log.final.out'
     singularity:

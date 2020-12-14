@@ -147,8 +147,8 @@ def argparser():
                         dest="features", required=True)
     parser.add_argument("--gene-lengths", help="Optional gene length table. See `--gene-length-cutoff`",
                         dest="lengths", required=False)
-    parser.add_argument("--gene-length-cutoff", help="Discard genes with effective gene length below this value in > 50% of samples",
-                        dest="len_cutoff", required=False, default=10, type=int)
+    parser.add_argument("--gene-length-cutoff", type=int, default=100, dest='len_cutoff', 
+                        help="Discard genes with effective gene length below this value in > 50% of samples")
     parser.add_argument("-o ", "--output", default="biotypes_mqc.yaml",
                         help="Output filename. Will default to biotypes_mqc.yaml")
     args = parser.parse_args()

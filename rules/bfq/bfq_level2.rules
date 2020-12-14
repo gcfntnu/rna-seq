@@ -15,8 +15,10 @@ rule bfq_level2_pca:
 rule bfq_level2_gene_biotypes:
     input:
         counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
+        abundance = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm.tsv'),
         sample_info =  join(INTERIM_DIR, 'sample_info.tsv'),
-        feature_info = join(REF_DIR, 'genes', 'genes.tsv')
+        feature_info = join(REF_DIR, 'genes', 'genes.tsv'),
+        gene_lengths = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_lengths.tsv')
     params:
         script = srcdir('scripts/counts_qc.py')
     singularity:
@@ -28,6 +30,7 @@ rule bfq_level2_gene_biotypes:
         '--figure top_biotypes '
         '--abundance {input.counts} '
         '--counts {input.counts} '
+        '--gene-lengths {input.gene_lengths} '
         '--sample-info {input.sample_info} '
         '--output {output} '
         '--feature-info {input.feature_info} '
@@ -36,6 +39,7 @@ rule bfq_level2_gene_high:
     input:
         abundance = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm.tsv'),
         counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
+        gene_lengths = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_lengths.tsv'),
         sample_info =  join(INTERIM_DIR, 'sample_info.tsv'),
         feature_info = join(REF_DIR, 'genes', 'genes.tsv')
     params:
@@ -49,6 +53,7 @@ rule bfq_level2_gene_high:
         '--figure top_genes '
         '--abundance {input.abundance} '
         '--counts {input.counts} '
+        '--gene-lengths {input.gene_lengths} '
         '--sample-info {input.sample_info} '
         '--output {output} '
         '--feature-info {input.feature_info} '
