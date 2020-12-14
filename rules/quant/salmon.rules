@@ -144,6 +144,28 @@ rule salmon_tximport:
         '-t salmon '
         '-o {output} '
 
+rule salmon_gene_anndata:
+    input:
+        gene_counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),
+        gene_tpm = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm.tsv'),
+        gene_abundance = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_tpm_length_scaled.tsv'),
+        gene_vst = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_vst.tsv'),
+        gene_length = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_lengths.tsv')
+    output:
+        join(QUANT_INTERIM, 'salmon', 'gene_anndata.adh5')
+    params:
+        script = srcdir('scripts/create_anndata.py')
+    singularity:
+        'docker://' + config['docker']['scanpy']
+    shell:
+        'python {params.script} '
+        '--input {input.gene_counts} '
+        '--tpm {input.gene_tpm} '
+        '--vsn {input.gene_vst} '
+        '--abundance {input.gene_abundance} '
+        '--output {output} '
+
+        
 rule salmon_quant:
     input:
         gene_counts = join(QUANT_INTERIM, 'salmon', 'tximport', 'gene_counts.tsv'),

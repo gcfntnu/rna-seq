@@ -103,10 +103,7 @@ if (args$type == "gene"){
     keep.cols <- colSums(!is.na(out)) > 0
     out <- out[,keep.cols]
 } else if (args$type == "tx_info"){
-    print(head(tx.info))
     rownames(tx.info) <- tx.info[,"transcript_id"]
-    print(head(tx.info))
-    print(head(txi.tx$counts))
     out <- tx.info[rownames(txi.tx$counts),]
     keep.cols <- colSums(!is.na(out)) > 0
     out <- out[,keep.cols]
